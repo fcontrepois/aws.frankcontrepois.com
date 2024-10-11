@@ -193,7 +193,7 @@ Plot.plot({
   grid: true,
   padding: 0,
   width: width,
-  height: 3500,
+  height: (new Set(region_to_service.map(item => item.service))).size*20,
   //grid: true,
   marginTop: 80,
   marginLeft: 120,
@@ -206,6 +206,37 @@ Plot.plot({
       sort: "Region",
       x: "regioncode",
       y: "service",
+      fill: "green",
+      inset: 0.5,
+      tip: true
+    }),
+  ]
+})
+```
+
+## Region and Instances
+```js
+const ec2_generation_to_regions = FileAttachment("data/ec2_generation_to_regions.csv").csv({typed:true})
+```
+
+```js
+Plot.plot({
+  grid: true,
+  padding: 0,
+  width: width,
+  height: (new Set(ec2_generation_to_regions.map(item => item.generation))).size*20,
+  //grid: true,
+  marginTop: 80,
+  marginLeft: 120,
+  x: {axis: "top", label: "Region", tickRotate: -45},
+  y: {label: "Service", transform: s => s.replace('AWS', '')
+    .replace('Amazon', '')
+  },
+  marks: [
+    Plot.cell(ec2_generation_to_regions, {
+      sort: "Region Code",
+      x: "Region Code",
+      y: "generation",
       fill: "green",
       inset: 0.5,
       tip: true
