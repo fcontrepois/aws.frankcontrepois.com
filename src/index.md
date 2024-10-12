@@ -1,5 +1,5 @@
 ---
-theme: [glacier, slate]
+theme: [deep-space]
 ---
 
 # AWS pricing graphs
@@ -11,41 +11,48 @@ The project is built using [Observable Framework](https://observablehq.com/frame
 const s3FirstGbPerRegionData = FileAttachment("data/s3FirstGbPerRegion.csv").csv({typed: true});
 ```
 
+```js
+const s3FirstGbPerRegionDataMedian = d3.median(s3FirstGbPerRegionData, d=>d.PricePerUnit);
+```
+
 # Regions and price
 ## S3 Standard - First GB price
+The calculated median value is **$${s3FirstGbPerRegionDataMedian}/h**. You need to have a good reason to be above that value. For example, GovCloud is costlier but the added security credentials and legal requirements might make it the only possible option.
 
-A price below $0.03 per hour is what AWS charges for standard regions (blue colour) while anything above that line is to be considered expensive.
+A price below $${s3FirstGbPerRegionDataMedian}/h per hour is good and should be the first choice.
 
-GovCloud should be expensive, most of the additional security is applied to the data.
+<div class="card">
 
 ```js
 Plot.plot({
   marginBottom: 78,
   x:{tickRotate: -45, label: null},
-  y:{label: "First Gb of S3 Storage per region ($/h) "},
+  y:{label: "First Gb of S3 Storage per region ($/h). The lower the better."},
   grid: true,
   width: width,
-  color: {type: "diverging", pivot: d3.median(s3FirstGbPerRegionData, d=>d.PricePerUnit), scheme: "BuRd"},
+  color: {type: "diverging", pivot: s3FirstGbPerRegionDataMedian, scheme: "BuRd"},
   marks:[
     Plot.barY(
       s3FirstGbPerRegionData, {
         x: "Region Code",
         y: "PricePerUnit",
         fill: "PricePerUnit",
-        sort: {x: "y", reduce: "max", order: "ascending"},
+        sort: {x: "y", order: "ascending"},
     }),
     Plot.tip(
       s3FirstGbPerRegionData,
       Plot.pointerX({
         x: "Region Code",
         y: "PricePerUnit",
-        title: (d) =>` Region: ${d["Region Code"]}
- Price: $${d.PricePerUnit}/h`
+        title: (d) =>` Region: ${d["Region Code"]}\n Price: $${d.PricePerUnit}/h`
       })
-    )
+    ),
+    //Plot.ruleY([s3FirstGbPerRegionDataMedian])
   ]
 })
 ```
+
+</div>
 
 <div class="grid grid-cols-2">
 <div class="card"><h2>Costiest regions for S3</h2>
@@ -119,45 +126,62 @@ const t3microOdHourPerRegion = FileAttachment("data/t3microOdHourPerRegion.csv")
 ```
 
 ```js
+const t3microOdHourPerRegionMedian = d3.median(t3microOdHourPerRegion, d=>d.PricePerUnit);
+```
+
+The t3.micro instance type exists in all regions. We can use the cost of running a t3.micro between each regions. We can assume that any difference in cost comes from factor outside of running the server. Example of external factors are: the price of electricity, climate, local laws, security requirements.
+
+The median price of running a t3.micro is **$${t3microOdHourPerRegionMedian}/h**. Again, you need a good reason to select regions where the price is higher.
+
+<div class="tip">
+  <p>Note how in GovCloud running a t3 instance costs the same as in most other regions, as opposed to the inflated price for storage?  </p>
+</div>
+
+
+<div class="card">
+
+```js
 Plot.plot({
   marginBottom: 78,
   x:{tickRotate: -45, label: null},
-  y:{label: "On-demand price to run a t3.micro Storage ($/h) "},
+  y:{label: "On-demand price to run a t3.micro Storage ($/h). The lower the better."},
   grid: true,
   width: width,
-  color: {type: "diverging", pivot: d3.median(t3microOdHourPerRegion, d=>d.PricePerUnit), scheme: "BuRd"},
+  color: {type: "diverging", pivot: t3microOdHourPerRegionMedian, scheme: "BuRd"},
   marks:[
     Plot.barY(
       t3microOdHourPerRegion, {
         x: "Region Code",
         y: "PricePerUnit",
         fill: "PricePerUnit",
-        sort: {x: "y", reduce: "max", order: "ascending"},
+        sort: {x: "y", order: "ascending"},
     }),
     Plot.tip(
       t3microOdHourPerRegion,
       Plot.pointerX({
         x: "Region Code",
         y: "PricePerUnit",
-        title: (d) =>` Region: ${d["Region Code"]}
- Price: $${d.PricePerUnit}/h`
+        title: (d) =>` Region: ${d["Region Code"]}\n Price: $${d.PricePerUnit}/h`
       })
     )
   ]
 })
 ```
 
+</div>
+
 ## Number of services per region
 
 ```js
 const number_of_services_per_region = FileAttachment("data/number_of_services_per_region.csv").csv({typed:true})
 ```
+<div class="card">
 
 ```js
 Plot.plot({
   marginBottom: 78,
   x:{tickRotate: -45, label: null},
-  y:{label: "Number of AWS services per region "},
+  y:{label: "Number of AWS services per region. The higher the better."},
   grid: true,
   width: width,
   color: {type: "diverging", pivot: d3.median(number_of_services_per_region, d=>d.count), scheme: "Greens"},
@@ -174,13 +198,13 @@ Plot.plot({
       Plot.pointerX({
         x: "regioncode",
         y: "count",
-        title: (d) =>` Region: ${d.regioncode}
- Number of services: ${d.count}`
+        title: (d) =>` Region: ${d.regioncode}\n Number of services: ${d.count}`
       })
     )
   ]
 })
 ```
+</div>
 
 ## Service to region mapping
 
@@ -188,13 +212,14 @@ Plot.plot({
 const region_to_service = FileAttachment("data/region_to_service.csv").csv({typed:true})
 ```
 
+<div class="card">
+
 ```js
 Plot.plot({
   grid: true,
   padding: 0,
   width: width,
-  height: (new Set(region_to_service.map(item => item.service))).size*20,
-  //grid: true,
+  height: (new Set(region_to_service.map(item => item.service))).size*30,
   marginTop: 80,
   marginLeft: 120,
   x: {axis: "top", label: "Region", tickRotate: -45},
@@ -202,29 +227,32 @@ Plot.plot({
     .replace('Amazon', '')
   },
   marks: [
-    Plot.cell(region_to_service, {
+    Plot.cell(region_to_service,{
       sort: "Region",
       x: "regioncode",
       y: "service",
       fill: "green",
       inset: 0.5,
-      tip: true
+      tip: true,
     }),
   ]
 })
 ```
 
+</div>
+
 ## Region and Instances
 ```js
 const ec2_generation_to_regions = FileAttachment("data/ec2_generation_to_regions.csv").csv({typed:true})
 ```
+<div class="card">
 
 ```js
 Plot.plot({
   grid: true,
   padding: 0,
   width: width,
-  height: (new Set(ec2_generation_to_regions.map(item => item.generation))).size*20,
+  height: (new Set(ec2_generation_to_regions.map(item => item.generation))).size*30,
   //grid: true,
   marginTop: 80,
   marginLeft: 120,
@@ -239,8 +267,10 @@ Plot.plot({
       y: "generation",
       fill: "green",
       inset: 0.5,
-      tip: true
+      tip: true,
+      sort: {x: "y"}
     }),
   ]
 })
 ```
+</div>
