@@ -1,5 +1,4 @@
 ---
-theme: [deep-space]
 ---
 
 # AWS pricing graphs
@@ -126,7 +125,7 @@ const t3microOdHourPerRegion = FileAttachment("data/t3microOdHourPerRegion.csv")
 ```
 
 ```js
-const t3microOdHourPerRegionMedian = d3.median(t3microOdHourPerRegion, d=>d.PricePerUnit);
+const t3microOdHourPerRegionMedian = d3.median(t3microOdHourPerRegion, d=>d.price);
 ```
 
 The t3.micro instance type exists in all regions. We can use the cost of running a t3.micro between each regions. We can assume that any difference in cost comes from factor outside of running the server. Example of external factors are: the price of electricity, climate, local laws, security requirements.
@@ -142,26 +141,26 @@ The median price of running a t3.micro is **$${t3microOdHourPerRegionMedian}/h**
 
 ```js
 Plot.plot({
-  marginBottom: 78,
+  marginBottom: 68,
   x:{tickRotate: -45, label: null},
-  y:{label: "On-demand price to run a t3.micro Storage ($/h). The lower the better."},
+  y:{label: "On-demand price to run a t3.micro ($/h). The lower the better."},
   grid: true,
   width: width,
   color: {type: "diverging", pivot: t3microOdHourPerRegionMedian, scheme: "BuRd"},
   marks:[
     Plot.barY(
       t3microOdHourPerRegion, {
-        x: "Region Code",
-        y: "PricePerUnit",
-        fill: "PricePerUnit",
+        x: "regioncode",
+        y: "price",
+        fill: "price",
         sort: {x: "y", order: "ascending"},
     }),
     Plot.tip(
       t3microOdHourPerRegion,
       Plot.pointerX({
-        x: "Region Code",
-        y: "PricePerUnit",
-        title: (d) =>` Region: ${d["Region Code"]}\n Price: $${d.PricePerUnit}/h`
+        x: "regioncode",
+        y: "price",
+        title: (d) =>` Region: ${d["location"]}\n Price: $${d.price}/h`
       })
     )
   ]
@@ -175,6 +174,7 @@ Plot.plot({
 ```js
 const number_of_services_per_region = FileAttachment("data/number_of_services_per_region.csv").csv({typed:true})
 ```
+
 <div class="card">
 
 ```js
@@ -204,6 +204,7 @@ Plot.plot({
   ]
 })
 ```
+
 </div>
 
 ## Service to region mapping
@@ -212,23 +213,25 @@ Plot.plot({
 const region_to_service = FileAttachment("data/region_to_service.csv").csv({typed:true})
 ```
 
+```js
+const serviceCount = [...new Set(region_to_service.map(d => d.service))].length
+const serviceRowHeight = 15; // px per service
+```
+
 <div class="card">
 
 ```js
 Plot.plot({
-  grid: true,
+  width,
   padding: 0,
-  width: width,
-  height: (new Set(region_to_service.map(item => item.service))).size*30,
+  grid: true,
   marginTop: 80,
   marginLeft: 120,
+  height: serviceCount * serviceRowHeight, 
   x: {axis: "top", label: "Region", tickRotate: -45},
-  y: {label: "Service", transform: s => s.replace('AWS', '')
-    .replace('Amazon', '')
-  },
+  y: { label: "Service", transform: s => s.replace('AWS', '').replace('Amazon', '') },
   marks: [
     Plot.cell(region_to_service,{
-      sort: "Region",
       x: "regioncode",
       y: "service",
       fill: "green",
@@ -242,21 +245,30 @@ Plot.plot({
 </div>
 
 ## Region and Instances
+
 ```js
 const regionInstanceData = FileAttachment("data/ec2_generation_to_regions.csv").csv({typed:true})
+```
+
+```js
+const instanceCount = [...new Set(regionInstanceData.map(d => d.generation))].length
+const regionCount = [...new Set(regionInstanceData.map(d => d.region_code))].length
+const instanceRowHeight = 8
+
 ```
 
 <div class="card">
 
 ```js
 Plot.plot({
+  width,
   padding: 0,
   grid: true,
   marginTop: 80,
   marginLeft: 80,
-  marginRight: 30,
+  height: serviceCount * instanceRowHeight, 
   x: {axis: "top", label: "Region", tickRotate: -45},
-  y: { label: "Generation", transform: s => s.replace('AWS', '').replace('Amazon', '') },
+  y: { label: "Generation"},
   marks: [
     Plot.cell(regionInstanceData, {
       x: "region_code",
