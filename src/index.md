@@ -243,8 +243,36 @@ Plot.plot({
 
 ## Region and Instances
 ```js
-const ec2_generation_to_regions = FileAttachment("data/ec2_generation_to_regions.csv").csv({typed:true})
+const regionInstanceData = FileAttachment("data/ec2_generation_to_regions.csv").csv({typed:true})
 ```
+
+```js
+// 1. Get all unique regions and generations
+const regions = Array.from(new Set(regionInstanceData.map(d => d.region)));
+const generationCounts = d3.rollup(
+  regionInstanceData,
+  v => new Set(v.map(d => d.region)).size,
+  d => d.generation
+);
+const generations = Array.from(generationCounts.entries())
+  .sort((a, b) => d3.descending(a[1], b[1]))
+  .map(d => d[0]);
+
+
+
+// 2. Build a full grid, marking present/absent
+const grid = [];
+for (const region of regions) {
+  for (const generation of generations) {
+    grid.push({
+      region,
+      generation,
+      present: regionInstanceData.some(d => d.region === region && d.generation === generation) ? 1 : 0
+    });
+  }
+}
+```
+
 <div class="card">
 
 ```js
@@ -252,23 +280,21 @@ Plot.plot({
   grid: true,
   padding: 0,
   width: width,
-  height: (new Set(ec2_generation_to_regions.map(item => item.generation))).size*30,
-  //grid: true,
   marginTop: 80,
   marginLeft: 120,
   x: {axis: "top", label: "Region", tickRotate: -45},
-  y: {label: "Service", transform: s => s.replace('AWS', '')
-    .replace('Amazon', '')
+  y: {
+    domain: generations,
+    label: "Generation",
+    transform: s => s.replace('AWS', '').replace('Amazon', '')
   },
   marks: [
-    Plot.cell(ec2_generation_to_regions, {
-      sort: "Region Code",
-      x: "Region Code",
+    Plot.cell(grid, {
+      x: "region",
       y: "generation",
-      fill: "green",
+      fill: d => d.present ? "green" : "black",
       inset: 0.5,
       tip: true,
-      sort: {x: "y"}
     }),
   ]
 })
