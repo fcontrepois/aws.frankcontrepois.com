@@ -281,7 +281,8 @@ Plot.plot({
   padding: 0,
   width: width,
   marginTop: 80,
-  marginLeft: 120,
+  marginLeft: 60,
+  marginRight: 60,
   x: {axis: "top", label: "Region", tickRotate: -45},
   y: {
     domain: generations,
