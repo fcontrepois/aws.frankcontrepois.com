@@ -1,4 +1,5 @@
 ---
+theme: deep-space
 ---
 
 # AWS pricing graphs
