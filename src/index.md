@@ -250,16 +250,13 @@ const regionInstanceData = FileAttachment("data/ec2_generation_to_regions.csv").
 
 ```js
 Plot.plot({
-  grid: true,
   padding: 0,
-  width: width,
+  grid: true,
   marginTop: 80,
-  marginLeft: 120,
+  marginLeft: 80,
+  marginRight: 30,
   x: {axis: "top", label: "Region", tickRotate: -45},
-  y: {
-    label: "Generation",
-    transform: s => s.replace('AWS', '').replace('Amazon', '')
-  },
+  y: { label: "Generation", transform: s => s.replace('AWS', '').replace('Amazon', '') },
   marks: [
     Plot.cell(regionInstanceData, {
       x: "region_code",
