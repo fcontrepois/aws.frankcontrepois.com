@@ -11,7 +11,7 @@ const s3FirstGbPerRegionData = FileAttachment("data/s3FirstGbPerRegion.csv").csv
 ```
 
 ```js
-const s3FirstGbPerRegionDataMedian = d3.median(s3FirstGbPerRegionData, d=>d.PricePerUnit);
+const s3FirstGbPerRegionDataMedian = d3.median(s3FirstGbPerRegionData, d=>d.price);
 ```
 
 # Regions and price
@@ -33,17 +33,17 @@ Plot.plot({
   marks:[
     Plot.barY(
       s3FirstGbPerRegionData, {
-        x: "Region Code",
-        y: "PricePerUnit",
-        fill: "PricePerUnit",
+        x: "regioncode",
+        y: "price",
+        fill: "price",
         sort: {x: "y", order: "ascending"},
     }),
     Plot.tip(
       s3FirstGbPerRegionData,
       Plot.pointerX({
-        x: "Region Code",
-        y: "PricePerUnit",
-        title: (d) =>` Region: ${d["Region Code"]}\n Price: $${d.PricePerUnit}/h`
+        x: "regioncode",
+        y: "price",
+        title: (d) =>` Region: ${d["regioncode"]}\n Price: $${d.price}/h`
       })
     ),
     //Plot.ruleY([s3FirstGbPerRegionDataMedian])
@@ -59,11 +59,11 @@ Plot.plot({
 ```js
 // https://observablehq.com/framework/inputs/table
 Inputs.table(s3FirstGbPerRegionData,{
-  columns: ["Region Code", "Location", "PricePerUnit"],
+  columns: ["regioncode", "location", "price"],
   header: {
-    "Region Code": "Code",
-    "Location": "Place",
-    "PricePerUnit": "Price"
+    "regioncode": "Region",
+    "location": "Location",
+    "price": "Price"
   },
   width: {
       "Region Code": 120,
@@ -75,7 +75,7 @@ Inputs.table(s3FirstGbPerRegionData,{
       "Location": "left",
       "PricePerUnit": "right"
   },
-  sort: "PricePerUnit",
+  sort: "price",
   reverse: true,
   rows: 5.5,
   maxWidth: 640,
@@ -85,16 +85,16 @@ Inputs.table(s3FirstGbPerRegionData,{
 ```
 
 </div>
-<div class="card"><h2>Chepest regions for S3</h2>
+<div class="card"><h2>Cheapest regions for S3</h2>
 
 ```js
 // https://observablehq.com/framework/inputs/table
 Inputs.table(s3FirstGbPerRegionData,{
-  columns: ["Region Code", "Location", "PricePerUnit"],
+  columns: ["regioncode", "location", "price"],
   header: {
-    "Region Code": "Code",
-    "Location": "Place",
-    "PricePerUnit": "Price"
+    "regioncode": "Region",
+    "location": "Location",
+    "price": "Price"
   },
   width: {
       "Region Code": 120,
@@ -106,7 +106,7 @@ Inputs.table(s3FirstGbPerRegionData,{
       "Location": "left",
       "PricePerUnit": "right"
   },
-  sort: "PricePerUnit",
+  sort: "price",
   reverse: false,
   rows: 5.5,
   maxWidth: 640,
@@ -215,7 +215,7 @@ const region_to_service = FileAttachment("data/region_to_service.csv").csv({type
 
 ```js
 const serviceCount = [...new Set(region_to_service.map(d => d.service))].length
-const serviceRowHeight = 15; // px per service
+const serviceRowHeight = 20; // px per service
 ```
 
 <div class="card">
