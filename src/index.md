@@ -208,6 +208,52 @@ Plot.plot({
 
 </div>
 
+## Region and Instances
+
+```js
+const regionInstanceData = FileAttachment("data/ec2_generation_to_regions.csv").csv({typed:true})
+```
+
+```js
+const instances = [...new Set(regionInstanceData.map(d => d.generation))].sort()
+const regions = [...new Set(regionInstanceData.map(d => d.region_code))].sort()
+const families = [...new Set(regionInstanceData.map(d => d.family))].sort()
+const groupedFamily = d3.sort(d3.groups(regionInstanceData, d => d.family))
+const colour = Plot.scale({color: {domain: families}})
+```
+
+```js
+Plot.legend({color: colour})
+```
+
+<div class="card">
+
+```js
+htl.html`${
+groupedFamily.map(([groupFamily,groupData]) => 
+Plot.plot({
+  width,
+  padding: 0,
+  grid: true,
+  marginTop: 80,
+  marginLeft: 80,
+  x: {axis: "top", label: null, tickRotate: -45},
+  y: { label: null},
+  color: colour,
+  marks: [
+    Plot.cell(groupData, {
+      x: "region_code",
+      y: "generation",
+      fill: "family",
+      inset: 0.5,
+      tip: true,
+    }),
+  ]
+}))
+}`
+```
+</div>
+
 ## Service to region mapping
 
 ```js
@@ -245,52 +291,4 @@ Plot.plot({
 
 </div>
 
-## Region and Instances
 
-```js
-const regionInstanceData = FileAttachment("data/ec2_generation_to_regions.csv").csv({typed:true})
-```
-
-```js
-//display(regionInstanceData)
-```
-
-```js
-const instances = [...new Set(regionInstanceData.map(d => d.generation))]
-const regions = [...new Set(regionInstanceData.map(d => d.region_code))]
-const families = [...new Set(regionInstanceData.map(d => d.family))]
-const groupedFamily = d3.sort(d3.groups(regionInstanceData, d => d.family))
-const colour = Plot.scale({color: {domain: families.sort()}})
-```
-
-```js
-Plot.legend({color: colour})
-```
-
-<div class="card">
-
-```js
-htl.html`${
-groupedFamily.map(([groupFamily,groupData]) => 
-Plot.plot({
-  width,
-  padding: 0,
-  grid: true,
-  marginTop: 80,
-  marginLeft: 80,
-  x: {axis: "top", label: "Region", tickRotate: -45},
-  y: { label: "Generation"},
-  color: colour,
-  marks: [
-    Plot.cell(groupData, {
-      x: "region_code",
-      y: "generation",
-      fill: "family",
-      inset: 0.5,
-      tip: true,
-    }),
-  ]
-}))
-}`
-```
-</div>
