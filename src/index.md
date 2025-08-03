@@ -252,6 +252,10 @@ const regionInstanceData = FileAttachment("data/ec2_generation_to_regions.csv").
 ```
 
 ```js
+//display(regionInstanceData)
+```
+
+```js
 const instanceCount = [...new Set(regionInstanceData.map(d => d.generation))].length
 const regionCount = [...new Set(regionInstanceData.map(d => d.region_code))].length
 const instanceRowHeight = 8
@@ -270,11 +274,12 @@ Plot.plot({
   height: serviceCount * instanceRowHeight, 
   x: {axis: "top", label: "Region", tickRotate: -45},
   y: { label: "Generation"},
+  color: {legend: true},
   marks: [
     Plot.cell(regionInstanceData, {
       x: "region_code",
       y: "generation",
-      fill: "green",
+      fill: "family",
       inset: 0.5,
       tip: true,
     }),
