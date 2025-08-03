@@ -1,10 +1,10 @@
-// src/data/ec2_generation_to_regions.js
+// src/data/ec2_generation_to_regions.csv.js
 
 import { PricingClient, GetProductsCommand } from "@aws-sdk/client-pricing";
 
 /**
- * Fetches EC2 instance generations and the regions where they are available.
- * Outputs CSV to standard output: generation,region_code,location
+ * Fetches EC2 instance generations, their families, and the regions where they are available.
+ * Outputs CSV to standard output: generation,family,region_code,location
  */
 async function fetchAndPrintEc2GenerationToRegionsCSV() {
   const client = new PricingClient({ region: "us-east-1" }); // Pricing API is only in us-east-1
@@ -41,26 +41,30 @@ async function fetchAndPrintEc2GenerationToRegionsCSV() {
       // Extract generation (e.g., "m5.large" => "m5")
       const generation = instanceType.split(".")[0];
 
+      // Extract family (letters before the first digit, e.g., "m5" => "m")
+      const familyMatch = generation.match(/^[a-zA-Z]+/);
+      const family = familyMatch ? familyMatch[0] : generation;
+
       if (!generationToRegions[generation]) {
-        generationToRegions[generation] = new Set();
+        generationToRegions[generation] = { family, regions: new Set() };
       }
       // Use JSON.stringify to ensure uniqueness in the Set
-      generationToRegions[generation].add(JSON.stringify({ region, location }));
+      generationToRegions[generation].regions.add(JSON.stringify({ region, location }));
     }
 
     nextToken = response.NextToken;
   } while (nextToken);
 
   // Output CSV header
-  console.log("generation,region_code,location");
+  console.log("generation,family,region_code,location");
 
-  // Output each (generation, region_code, location) triple
-  for (const [generation, regionLocSet] of Object.entries(generationToRegions)) {
-    for (const regionLocStr of regionLocSet) {
+  // Output each (generation, family, region_code, location) quadruple
+  for (const [generation, { family, regions }] of Object.entries(generationToRegions)) {
+    for (const regionLocStr of regions) {
       const { region, location } = JSON.parse(regionLocStr);
       // Escape commas in location if needed
       const safeLocation = `"${location.replace(/"/g, '""')}"`;
-      console.log(`${generation},${region},${safeLocation}`);
+      console.log(`${generation},${family},${region},${safeLocation}`);
     }
   }
 }
@@ -69,3 +73,4 @@ fetchAndPrintEc2GenerationToRegionsCSV().catch(err => {
   console.error("Error fetching EC2 generation to regions:", err);
   process.exit(1);
 });
+
