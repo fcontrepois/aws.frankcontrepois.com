@@ -256,27 +256,33 @@ const regionInstanceData = FileAttachment("data/ec2_generation_to_regions.csv").
 ```
 
 ```js
-const instanceCount = [...new Set(regionInstanceData.map(d => d.generation))].length
-const regionCount = [...new Set(regionInstanceData.map(d => d.region_code))].length
-const instanceRowHeight = 8
+const instances = [...new Set(regionInstanceData.map(d => d.generation))]
+const regions = [...new Set(regionInstanceData.map(d => d.region_code))]
+const families = [...new Set(regionInstanceData.map(d => d.family))]
+const groupedFamily = d3.sort(d3.groups(regionInstanceData, d => d.family))
+const colour = Plot.scale({color: {domain: families.sort()}})
+```
 
+```js
+Plot.legend({color: colour})
 ```
 
 <div class="card">
 
 ```js
+htl.html`${
+groupedFamily.map(([groupFamily,groupData]) => 
 Plot.plot({
   width,
   padding: 0,
   grid: true,
   marginTop: 80,
   marginLeft: 80,
-  height: serviceCount * instanceRowHeight, 
   x: {axis: "top", label: "Region", tickRotate: -45},
   y: { label: "Generation"},
-  color: {legend: true},
+  color: colour,
   marks: [
-    Plot.cell(regionInstanceData, {
+    Plot.cell(groupData, {
       x: "region_code",
       y: "generation",
       fill: "family",
@@ -284,6 +290,7 @@ Plot.plot({
       tip: true,
     }),
   ]
-})
+}))
+}`
 ```
 </div>
