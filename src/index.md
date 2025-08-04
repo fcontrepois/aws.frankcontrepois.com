@@ -171,40 +171,36 @@ Plot.plot({
 </div>
 
 ## Number of services per region
-
-```js
-const number_of_services_per_region = FileAttachment("data/number_of_services_per_region.csv").csv({typed:true})
-```
+Each little square is a service. It makes it easy to compare, no?
 
 <div class="card">
 
 ```js
 Plot.plot({
-  marginBottom: 78,
-  x:{tickRotate: -45, label: null},
-  y:{label: "Number of AWS services per region. The higher the better."},
-  grid: true,
-  width: width,
-  color: {type: "diverging", pivot: d3.median(number_of_services_per_region, d=>d.count), scheme: "Greens"},
-  marks:[
-    Plot.barY(
-      number_of_services_per_region, {
-        x: "regioncode",
-        y: "count",
-        fill: "count",
-        sort: {x: "y", reduce: "max", order: "descending"},
-    }),
-    Plot.tip(
-      number_of_services_per_region,
-      Plot.pointerX({
-        x: "regioncode",
-        y: "count",
-        title: (d) =>` Region: ${d.regioncode}\n Number of services: ${d.count}`
-      })
-    )
+  width,
+  x: {label: "Region", tickRotate: -45},
+  y: { label: "Service" },
+  marginBottom: 80,
+  marks: [
+    Plot.waffleY(
+     region_to_service,
+     Plot.groupX({
+      y: "count",
+     }, 
+     {
+      x: "regioncode",
+      y: "service",
+      sort: {x: "-y"},
+      fill: "green",
+      tip: true,
+     })),
   ]
 })
 ```
+
+</div>
+
+
 
 </div>
 
@@ -219,11 +215,12 @@ const instances = [...new Set(regionInstanceData.map(d => d.generation))].sort()
 const regions = [...new Set(regionInstanceData.map(d => d.region_code))].sort()
 const families = [...new Set(regionInstanceData.map(d => d.family))].sort()
 const groupedFamily = d3.sort(d3.groups(regionInstanceData, d => d.family))
-const colour = Plot.scale({color: {domain: families}})
+const familyColour = Plot.scale({color: {domain: families}})
+const regionColours = Plot.scale({color: {domain: regions}})
 ```
 
 ```js
-Plot.legend({color: colour})
+Plot.legend({color: familyColour})
 ```
 
 <div class="card">
@@ -239,7 +236,7 @@ Plot.plot({
   marginLeft: 80,
   x: {axis: "top", label: null, tickRotate: -45},
   y: { label: null},
-  color: colour,
+  color: familyColour,
   marks: [
     Plot.cell(groupData, {
       x: "region_code",
