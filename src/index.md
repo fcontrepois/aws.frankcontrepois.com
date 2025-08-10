@@ -253,7 +253,6 @@ Plot.plot({
 
 ## Regions and instances
 
-
 <div class="tip">
   <p>
     Hover the graphs to see the tooltip with the details.
@@ -268,18 +267,14 @@ const groupedRegions = d3.sort(d3.groups(regionInstanceData, d => d.region_code)
 
 ```js
 htl.html`${groupedRegions.map(([groupRegions, groupData]) => {
-  //const groupFamilies =    [...new Set(groupData.map(d => d.family))].sort();
-  //const groupGenerations = [...new Set(groupData.map(d => d.generation))].sort();
-  //display(groupData);
-  //display(groupFamilies);
-  //display(generations);
+  // https://observablehq.com/plot/marks/axis#axis-mark
+  // display(groupData);
   return Plot.plot({
     width,
     padding: 0,
     grid: true,
     marginTop: 80,
     marginLeft: 80,
-    x: {label: null, tickFormat: null, tickSize: 0},
     y: { label: null },
     color: familyColour,
     marks: [
@@ -290,11 +285,15 @@ htl.html`${groupedRegions.map(([groupRegions, groupData]) => {
         inset: 0.5,
         tip: true,
       }),
+      Plot.axisX(groupData, {
+        x: (y) => y.family, tickFormat: y => y.family
+      })
     ]
   })
 })}`
 
 ```
+
 </div>
 
 ## Service to region mapping
