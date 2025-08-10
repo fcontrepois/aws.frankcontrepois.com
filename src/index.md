@@ -204,7 +204,7 @@ Plot.plot({
 
 </div>
 
-## Region and Instances
+## Instances and regions
 
 ```js
 const regionInstanceData = FileAttachment("data/ec2_generation_to_regions.csv").csv({typed:true})
@@ -241,6 +241,44 @@ Plot.plot({
     Plot.cell(groupData, {
       x: "region_code",
       y: "generation",
+      fill: "family",
+      inset: 0.5,
+      tip: true,
+    }),
+  ]
+}))
+}`
+```
+</div>
+
+## Regions and instances
+
+```js
+const groupedRegions = d3.sort(d3.groups(regionInstanceData, d => d.region_code))
+```
+
+```js
+Plot.legend({color: familyColour})
+```
+
+<div class="card">
+
+```js
+htl.html`${
+groupedRegions.map(([groupRegions,groupData]) => 
+Plot.plot({
+  width,
+  padding: 0,
+  grid: true,
+  marginTop: 80,
+  marginLeft: 80,
+  x: {axis: "top", label: null, tickRotate: -45},
+  y: { label: null},
+  color: familyColour,
+  marks: [
+    Plot.cell(groupData, {
+      y: "region_code",
+      x: "generation",
       fill: "family",
       inset: 0.5,
       tip: true,
