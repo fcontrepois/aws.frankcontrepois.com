@@ -275,6 +275,7 @@ htl.html`${groupedRegions.map(([groupRegions, groupData]) => {
     grid: true,
     marginTop: 80,
     marginLeft: 80,
+    x: { label: null },
     y: { label: null },
     color: familyColour,
     marks: [
