@@ -253,39 +253,47 @@ Plot.plot({
 
 ## Regions and instances
 
-```js
-const groupedRegions = d3.sort(d3.groups(regionInstanceData, d => d.region_code))
-```
+
+<div class="tip">
+  <p>
+    Hover the graphs to see the tooltip with the details.
+ </p>
+</div>
 
 ```js
-Plot.legend({color: familyColour})
+const groupedRegions = d3.sort(d3.groups(regionInstanceData, d => d.region_code))
 ```
 
 <div class="card">
 
 ```js
-htl.html`${
-groupedRegions.map(([groupRegions,groupData]) => 
-Plot.plot({
-  width,
-  padding: 0,
-  grid: true,
-  marginTop: 80,
-  marginLeft: 80,
-  x: {axis: "top", label: null, tickRotate: -45},
-  y: { label: null},
-  color: familyColour,
-  marks: [
-    Plot.cell(groupData, {
-      y: "region_code",
-      x: "generation",
-      fill: "family",
-      inset: 0.5,
-      tip: true,
-    }),
-  ]
-}))
-}`
+htl.html`${groupedRegions.map(([groupRegions, groupData]) => {
+  //const groupFamilies =    [...new Set(groupData.map(d => d.family))].sort();
+  //const groupGenerations = [...new Set(groupData.map(d => d.generation))].sort();
+  //display(groupData);
+  //display(groupFamilies);
+  //display(generations);
+  return Plot.plot({
+    width,
+    padding: 0,
+    grid: true,
+    marginTop: 80,
+    marginLeft: 80,
+    x: {label: null, tickFormat: null, tickSize: 0},
+    y: { label: null },
+    color: familyColour,
+    marks: [
+      Plot.cell(groupData, {
+        x: "generation",
+        y: "region_code",
+        fill: "family",
+        inset: 0.5,
+        tip: true,
+      }),
+    ]
+  })
+})}`
+
 ```
 </div>
 
