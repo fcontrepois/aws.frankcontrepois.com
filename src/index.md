@@ -184,16 +184,13 @@ Plot.plot({
   marks: [
     Plot.waffleY(
      region_to_service,
-     Plot.groupX({
-      y: "count",
-     }, 
      {
       x: "regioncode",
-      y: "service",
+      y: 1,
+      fill: "service",
       sort: {x: "-y"},
-      fill: "green",
-      tip: true,
-     })),
+      tip: {format: {y: null}},
+     }),
   ]
 })
 ```
