@@ -151,7 +151,7 @@ Plot.plot({
 ```
 
 
-# 🚨 FinOps Playbook: Challenging S3 Pricing Assumptions 
+# FinOps Playbook: Challenging S3 Pricing Assumptions 
 
 ## Problem
 S3 Standard price is **$0.023/GB/month and has not changed since 2016**.  
