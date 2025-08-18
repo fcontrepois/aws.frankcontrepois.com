@@ -122,11 +122,13 @@ Inputs.table(s3PricingOverTime, {
 
 ```js
 Plot.plot({
-  x: { type: "utc", label: "Date" },
+  x: { type: "utc", label: "Date", nice: true },
+  y: {domain: [0, 0.2], nice: true},
   marks: [
     Plot.lineY( s3PricingOverTime, {
         x: "date",
         y: "price",
+        tip: true,
       }),
   ]
 })
@@ -136,12 +138,13 @@ Plot.plot({
 ```js
 
 Plot.plot({
-  x: { type: "utc", label: "Date", domain: [new Date("2020-01-01"), new Date()] },
-  y: {domain: [0, 0.03]},
+  x: { type: "utc", label: "Date", domain: [new Date("2020-01-01"), new Date()], nice: true, grid: true },
+  y: {domain: [0, 0.03], nice: true},
   marks: [
     Plot.lineY( s3PricingOverTime, {
         x: "date",
         y: "price",
+        tip: true,
       }),
   ]
 })
