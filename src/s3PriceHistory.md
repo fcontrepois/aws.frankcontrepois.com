@@ -151,3 +151,32 @@ Plot.plot({
 ```
 
 
+# 🚨 FinOps Playbook: Challenging S3 Pricing Assumptions 
+
+## Problem
+S3 Standard price is **$0.023/GB/month and has not changed since 2016**.  
+In that same time, disk prices have plummeted: you can buy professional storage today for the equivalent of **$0.003/GB/month**. (price per GB divided by 36 months of warrantied usage)  
+That’s **7.5× cheaper**.  
+
+So why hasn’t AWS dropped S3 prices in nearly a decade? Because they don’t need to. Customers accept S3 as the default, and AWS captures the margin.  
+
+## Reality Check
+S3 is more than just a disk. You’re paying for replication, durability, resilience, APIs, and zero-ops.  
+But here’s the truth: **most S3 data is never read again.** Paying premium “instant-access” rates for cold data is burning money.  
+
+## FinOps Insight
+- The fact that **Glacier is $0.004/GB/month** proves AWS can offer near-hardware economics when access speed is relaxed.  
+- That makes S3 Standard less about cost, more about **convenience and inertia**.  
+- Leaving data in Standard by default is effectively paying an “AWS storage tax.”  
+
+## Action Steps
+1. **Interrogate usage**: How much of your S3 data was accessed in the last 30–90 days?  
+2. **Challenge the default**: Stop assuming S3 Standard is the right answer.  
+3. **Automate tiering**: Lifecycle policies should be the norm, not the exception.  
+4. **Report the waste**: Show stakeholders how much could be saved by moving to IA or Glacier.  
+
+## Key Takeaway
+If you don’t actively manage S3, AWS will happily charge you 7× the cost of storage.  
+FinOps leaders must push back, or the “S3 Tax” will silently drain budgets year after year.  
+
+[Source of the disk prices](https://diskprices.com/?locale=us&condition=new&units=gb&capacity=500-20000&disk_types=u2)
