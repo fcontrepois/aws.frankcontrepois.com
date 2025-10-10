@@ -24,7 +24,17 @@ export default {
 
   // Some additional configuration options and their defaults:
   theme: ["near-midnight"],
-  // header: "", // what to show in the header (HTML)
+  header:` 
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-6YD6LFWQFG"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-6YD6LFWQFG');
+</script>
+  `,
    footer: "Built by Frank Contrepois using Observable.", // what to show in the footer (HTML)
   // sidebar: true, // whether to show the sidebar
    toc: true, // whether to show the table of contents
