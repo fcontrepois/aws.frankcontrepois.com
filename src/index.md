@@ -6,6 +6,7 @@ theme: deep-space
 
 This is the site where I take AWS pricing data and I create nice graphs from them.
 The project is built using [Observable Framework](https://observablehq.com/framework)
+Last update: 2025-12--3
 
 ```js
 const s3FirstGbPerRegionData = FileAttachment("data/s3FirstGbPerRegion.csv").csv({typed: true});
