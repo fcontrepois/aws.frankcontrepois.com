@@ -1,74 +1,74 @@
-The live website is at https://aws.frankcontrepois.com
-
 # AWS Pricing Graphs
 
-A visual exploration of AWS pricing data, built with [Observable Framework](https://observablehq.com/framework).
+The live site is at [aws.frankcontrepois.com](https://aws.frankcontrepois.com).
 
-## What is this?
+This is an Observable Framework site for investigating AWS public pricing. It is
+moving from one-off, current-price charts to a reproducible monthly price history.
+The site will pair editorial investigations with durable reference pages for AWS
+regions, services, instance families, and instance types.
 
-This project takes raw AWS pricing data and turns it into clear, interactive graphs. The goal: help you make smarter, faster decisions about where and how to run your AWS workloads.
+## Data architecture
 
-## Features
+```text
+AWS public offer files
+  -> monthly TBZ archive in S3
+  -> raw Parquet snapshots (all source columns retained)
+  -> compact historical price datasets
+  -> small chart-specific extracts for this website
+```
 
-- **S3 Storage Price by Region:**  
-  Instantly see which AWS regions offer the cheapest (and most expensive) S3 storage for the first GB.  
-  - Median price: **$0.025/h**.  
-  - Anything above? You’d better have a good reason (think: GovCloud, legal, or compliance needs).
+The infrastructure and raw-Parquet conversion job live in the sibling
+`FinOpsGuyCloudFormationRepository`. Raw data is intentionally kept separate
+from website data: the website should load only compact, static files needed for
+a chart.
 
-- **t3.micro On-Demand Cost Comparison:**  
-  Compare the hourly cost of running a t3.micro instance across all regions.  
-  - Median price: **$0.0121/h**.  
-  - Outliers often reflect local factors like electricity, climate, or regulation.
+## Current data
 
-- **Number of Services per Region:**  
-  Visualize AWS’s regional service coverage at a glance.  
-  - Each square = one service.  
-  - Spot the gaps and the overachievers.
+- **Raw pricing snapshots:** monthly archives and partitioned Parquet in
+  `s3://data.frankcontrepois.com/FinOpsGuyAwsPricingRepository/`.
+- **Foreign exchange reference data:** `src/data/fx-usd-monthly.csv`, sourced
+  from the European Central Bank. It is deliberately separate from AWS pricing
+  data so charts can express USD list prices and local-currency equivalents
+  independently.
+- **FX exposure page:** `src/fx-exposure.md` holds a USD invoice constant and
+  shows how exchange-rate movements change its local-currency equivalent. Its
+  date controls filter the available monthly observations; each selected series
+  is normalised to its first observation with Observable Plot.
+- **Website datasets:** the existing loaders and CSV files support the current
+  snapshot charts. Historical, compact EC2 price datasets are the next planned
+  layer; they are not implemented in this repository yet.
 
-- **Instance Family & Region Matrix:**  
-  See which EC2 instance families are available in which regions, with color-coded legends for clarity.
+## Principles
 
-- **Service-to-Region Mapping:**  
-  A detailed, scrollable map showing which AWS services are available in each region.
+- Preserve raw AWS snapshots so future questions can be answered again.
+- Define a stable, explicit comparison key rather than treating AWS SKU changes
+  as price changes.
+- Publish a small number of trustworthy fields for each question or chart.
+- Keep price history in USD; join FX at visualisation time.
+- Treat FX charts as currency-exposure analysis, not evidence that AWS changed
+  a list price. Consumption, taxes, payment terms, and hedging are outside this
+  reference series.
+- Show source and date coverage alongside published charts.
 
-## Why does this exist?
+## Local development
 
-AWS pricing is famously opaque. This project aims to cut through the noise, making it easy to:
-- Spot regional pricing anomalies
-- Choose the best region for your needs
-- Understand AWS’s global service distribution
+```sh
+npm install
+npm start
+```
 
-## How it works
+Run a production build with:
 
-- Data: Pulled from AWS’s public pricing endpoints, processed into CSVs.
-- Visualization: Built with Observable Plot and D3.js for interactive, responsive charts.
-- Everything is open and reproducible.
+```sh
+npm run build
+```
 
-## Quick Start
+## Technology
 
-1. Clone the repo:
-   ```sh
-   git clone https://github.com/fcontrepois/aws.frankcontrepois.com.git
-   ```
-2. Install dependencies:
-   ```sh
-   npm install
-   ```
-3. Run locally (using Observable Framework):
-   ```sh
-   npm start
-   ```
-4. Or, just [visit the live site](https://aws.frankcontrepois.com/) for the latest graphs.
-
-## Contributing
-
-- Found a bug? Have a feature idea? Open an issue or PR.
-- Data nerds, AWS obsessives, and visualization enthusiasts all welcome.
+- [Observable Framework](https://observablehq.com/framework)
+- Observable Plot and D3 for charts
+- Static CSV/Parquet-derived data files published through the website build
 
 ## License
 
 MIT
-
----
-
-*Built by [Frank Contrepois](https://github.com/fcontrepois). Inspired by a love of clarity, skepticism about cloud pricing, and a fondness for a good graph.*
