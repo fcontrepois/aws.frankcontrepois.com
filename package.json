@@ -6,7 +6,8 @@
     "build": "observable build",
     "dev": "observable preview",
     "deploy": "observable deploy",
-    "observable": "observable"
+    "observable": "observable",
+    "test": "node --test"
   },
   "dependencies": {
     "@aws-sdk/client-ec2": "^3.859.0",

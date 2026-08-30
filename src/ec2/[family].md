@@ -1,0 +1,173 @@
+---
+title: EC2 family comparison
+theme: deep-space
+---
+
+```js
+import {available, comparatorGroups, defaultSelection, directGenerationPeers, formatDelta, latestMonth, newThisMonth, normalizeCatalog, relativeTo, MONTHLY_HOURS} from "../components/ec2-family-comparator.js";
+const family = observable.params.family.toLowerCase();
+const catalog = normalizeCatalog(await FileAttachment("../data/ec2-family-catalog.csv").csv({typed: true}));
+const familyRows = catalog.filter((d) => d.family === family);
+if (!familyRows.length) throw new Error(`Unknown EC2 family: ${family}`);
+const pricedRows = available(familyRows);
+const defaults = defaultSelection(familyRows);
+const snapshot = latestMonth(familyRows);
+const familyNews = newThisMonth(familyRows);
+const familyNewsBanner = familyNews.newLineages.length
+  ? html`<div class="tip"><strong>First observed this month:</strong> ${familyNews.newLineages.map((d) => `${family}${d.generation} ${d.processor} / ${d.variant_label} (${d.size_count} ${d.size_count === 1 ? "size" : "sizes"})`).join("; ")}.</div>`
+  : html`<div class="note">No new ${family.toUpperCase()} lineages were first observed in ${snapshot}.</div>`;
+```
+
+# ${family.toUpperCase()} family price comparator
+
+Anchor the analysis on one exact instance type. Every percentage below compares the candidate with that selected anchor—not with the newest generation or with the preceding row.
+
+**Snapshot:** ${snapshot} · **Region:** us-east-1 · **Price:** Linux On-Demand USD list price
+
+${familyNewsBanner}
+
+## Choose the anchor
+
+<div class="grid grid-cols-4">
+<div class="card">
+
+```js
+const generation = view(Inputs.select([...new Set(pricedRows.map((d) => d.generation))].sort((a, b) => b - a), {label: "Generation", value: defaults.generation}));
+```
+
+</div>
+<div class="card">
+
+```js
+const processorRows = pricedRows.filter((d) => +d.generation === +generation);
+const processorOptions = [...new Set(processorRows.map((d) => d.processor))].sort();
+const processor = view(Inputs.select(processorOptions, {label: "Processor", value: processorOptions.includes(defaults.processor) ? defaults.processor : processorOptions[0]}));
+```
+
+</div>
+<div class="card">
+
+```js
+const variantRows = processorRows.filter((d) => d.processor === processor);
+const variantOptions = [...new Set(variantRows.map((d) => d.variant))].sort();
+const variant = view(Inputs.select(variantOptions, {label: "Variant", value: variantOptions.includes(defaults.variant) ? defaults.variant : variantOptions[0], format: (value) => variantRows.find((d) => d.variant === value)?.variant_label ?? value}));
+```
+
+</div>
+<div class="card">
+
+```js
+const sizeRows = variantRows.filter((d) => d.variant === variant);
+const sizeOptions = [...new Set(sizeRows.map((d) => d.size))];
+const size = view(Inputs.select(sizeOptions, {label: "Size", value: sizeOptions.includes(defaults.size) ? defaults.size : sizeOptions[0]}));
+```
+
+</div>
+</div>
+
+```js
+const anchor = sizeRows.find((d) => d.size === size);
+```
+
+```js
+const groups = comparatorGroups(anchor, familyRows);
+const {older, newer} = directGenerationPeers(anchor, groups.generations);
+const cheapestCpu = groups.cpus.toSorted((a, b) => a.price_usd_per_hour - b.price_usd_per_hour)[0] ?? null;
+const money = (value, digits = 4) => value == null ? "Unavailable" : `${+value < 0 ? "-" : ""}$${Math.abs(+value).toFixed(digits)}`;
+const peerSentence = (label, peer) => peer ? `${label} ${peer.instance_type} is ${formatDelta(peer.relative_difference)} (${money(peer.hourly_difference)}/hour) relative to ${anchor.instance_type}.` : `No exact ${label.toLowerCase()} is available for this processor, variant, size, and region.`;
+```
+
+## ${anchor.instance_type}
+
+${peerSentence("Direct predecessor", older)} ${peerSentence("Direct successor", newer)}
+
+<div class="grid grid-cols-4">
+  <div class="card"><h2>Anchor</h2><span class="big">${money(anchor.price_usd_per_hour)}</span><p>${money(anchor.price_usd_per_hour * MONTHLY_HOURS, 2)} per 730-hour month</p></div>
+  <div class="card"><h2>Direct predecessor</h2><span class="big">${older ? formatDelta(older.relative_difference) : "Unavailable"}</span><p>${older?.instance_type ?? "No exact equivalent"}</p></div>
+  <div class="card"><h2>Direct successor</h2><span class="big">${newer ? formatDelta(newer.relative_difference) : "Unavailable"}</span><p>${newer?.instance_type ?? "No exact equivalent"}</p></div>
+  <div class="card"><h2>Cheapest CPU peer</h2><span class="big">${cheapestCpu ? formatDelta(cheapestCpu.relative_difference) : "Unavailable"}</span><p>${cheapestCpu?.instance_type ?? "No exact equivalent"}</p></div>
+</div>
+
+## Direct specifications
+
+```js
+const directSpecs = [anchor, older, newer, cheapestCpu].filter(Boolean).filter((d, i, values) => values.findIndex((x) => x.instance_type === d.instance_type) === i);
+Inputs.table(directSpecs, {
+  columns: ["instance_type", "processor", "variant_label", "vcpu", "memory_gib", "physical_processor", "processor_architecture", "network_performance", "storage", "price_usd_per_hour"],
+  header: {instance_type: "Instance", processor: "CPU", variant_label: "Variant", vcpu: "vCPU", memory_gib: "GiB", physical_processor: "Physical processor", processor_architecture: "Architecture", network_performance: "Network", storage: "Storage", price_usd_per_hour: "USD/hour"},
+  format: {price_usd_per_hour: (d) => money(d)}
+})
+```
+
+## Price difference from ${anchor.instance_type}
+
+```js
+const chartData = [
+  {...relativeTo(anchor, anchor), comparison_group: "Anchor", group_label: "Anchor"},
+  ...groups.generations.map((d) => ({...d, comparison_group: "Generations", group_label: "Gen"})),
+  ...groups.cpus.map((d) => ({...d, comparison_group: "CPU alternatives", group_label: "CPU"})),
+  ...groups.variants.map((d) => ({...d, comparison_group: "Variant alternatives", group_label: "Variant"}))
+].map((d) => ({
+  ...d,
+  row_label: `${d.group_label} · ${d.instance_type}`,
+  percent: d.relative_difference * 100,
+  direction: d.relative_difference > 0 ? "Costlier" : d.relative_difference < 0 ? "Cheaper" : "Anchor"
+}));
+const chartMinimum = Math.min(0, ...chartData.map((d) => d.percent));
+const chartMaximum = Math.max(0, ...chartData.map((d) => d.percent));
+const chartSpan = Math.max(10, chartMaximum - chartMinimum);
+const chartDomain = [chartMinimum - chartSpan * 0.18, chartMaximum + chartSpan * 0.18];
+```
+
+<div class="card">
+
+```js
+resize((width) => Plot.plot({
+  width,
+  height: Math.max(260, chartData.length * 34 + 75),
+  marginLeft: width < 500 ? 125 : 155,
+  marginRight: 18,
+  x: {domain: chartDomain, label: `Difference from ${anchor.instance_type} (%)`, grid: true, tickFormat: (d) => `${d > 0 ? "+" : ""}${d}%`},
+  y: {domain: chartData.map((d) => d.row_label), label: null},
+  color: {domain: ["Cheaper", "Anchor", "Costlier"], range: ["#57c4ad", "#b8b8b8", "#f28e8e"], legend: true},
+  marks: [
+    Plot.ruleX([0], {stroke: "currentColor", strokeOpacity: 0.6}),
+    Plot.barX(chartData, {x: "percent", y: "row_label", fill: "direction", insetTop: 4, insetBottom: 4, tip: {format: {x: (d) => `${d > 0 ? "+" : ""}${d.toFixed(1)}%`, y: true}}}),
+    Plot.dot(chartData, {x: "percent", y: "row_label", fill: "direction"}),
+    Plot.text(chartData.filter((d) => d.percent < 0), {x: "percent", y: "row_label", text: (d) => formatDelta(d.relative_difference), dx: -7, textAnchor: "end", fill: "currentColor"}),
+    Plot.text(chartData.filter((d) => d.percent >= 0), {x: "percent", y: "row_label", text: (d) => formatDelta(d.relative_difference), dx: 7, textAnchor: "start", fill: "currentColor"})
+  ]
+}))
+```
+
+</div>
+
+Positive values are costlier than the anchor; negative values are cheaper. The anchor is 0% and price index 100.
+
+## Equivalent generations
+
+```js
+Inputs.table(groups.generations, {columns: ["instance_type", "generation", "price_usd_per_hour", "relative_difference", "price_index", "monthly_difference"], header: {instance_type: "Instance", generation: "Generation", price_usd_per_hour: "USD/hour", relative_difference: "Vs anchor", price_index: "Index", monthly_difference: "USD/730h"}, format: {price_usd_per_hour: (d) => money(d), relative_difference: formatDelta, price_index: (d) => d.toFixed(1), monthly_difference: (d) => money(d, 2)}})
+```
+
+## CPU alternatives
+
+```js
+Inputs.table(groups.cpus, {columns: ["instance_type", "processor", "vcpu", "memory_gib", "price_usd_per_hour", "relative_difference", "monthly_difference"], header: {instance_type: "Instance", processor: "CPU", vcpu: "vCPU", memory_gib: "GiB", price_usd_per_hour: "USD/hour", relative_difference: "Vs anchor", monthly_difference: "USD/730h"}, format: {price_usd_per_hour: (d) => money(d), relative_difference: formatDelta, monthly_difference: (d) => money(d, 2)}})
+```
+
+## Capability variants
+
+These are contextual alternatives, not equivalent products. Network, local storage, and other capability differences remain visible.
+
+```js
+Inputs.table(groups.variants, {columns: ["instance_type", "variant_label", "network_performance", "storage", "price_usd_per_hour", "relative_difference", "monthly_difference"], header: {instance_type: "Instance", variant_label: "Variant", network_performance: "Network", storage: "Storage", price_usd_per_hour: "USD/hour", relative_difference: "Vs anchor", monthly_difference: "USD/730h"}, format: {price_usd_per_hour: (d) => money(d), relative_difference: formatDelta, monthly_difference: (d) => money(d, 2)}})
+```
+
+## Complete ${family.toUpperCase()} matrix for size ${size}
+
+```js
+Inputs.table(familyRows.filter((d) => d.size === size), {columns: ["instance_type", "status", "processor", "variant_label", "vcpu", "memory_gib", "price_usd_per_hour", "last_price_usd_per_hour", "first_observed_month"], header: {instance_type: "Instance", status: "Status", processor: "CPU", variant_label: "Variant", vcpu: "vCPU", memory_gib: "GiB", price_usd_per_hour: "Current USD/hour", last_price_usd_per_hour: "Last USD/hour", first_observed_month: "First observed"}, format: {price_usd_per_hour: (d) => money(d), last_price_usd_per_hour: (d) => money(d)}})
+```
+
+<div class="note">These are public list prices, excluding discounts, commitments, Spot, taxes, and software. A missing exact equivalent stays unavailable; the page never substitutes a different processor, variant, size, or region. Price per vCPU or GiB is not a performance benchmark.</div>
