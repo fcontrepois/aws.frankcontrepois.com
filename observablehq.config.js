@@ -1,4 +1,6 @@
 // See https://observablehq.com/framework/config for documentation.
+import {readCatalogText} from "./lib/ec2-catalog-source.js";
+
 export default {
   // The app’s title; used in the sidebar and webpage titles.
   title: "AWS pricing in graphs",
@@ -6,15 +8,18 @@ export default {
   // The pages and sections in the sidebar. If you don’t specify this option,
   // all pages will be listed in alphabetical order. Listing pages explicitly
   // lets you organize them into sections and have unlisted pages.
-  // pages: [
-  //   {
-  //     name: "Examples",
-  //     pages: [
-  //       {name: "Dashboard", path: "/example-dashboard"},
-  //       {name: "Report", path: "/example-report"}
-  //     ]
-  //   }
-  // ],
+  pages: [
+    {name: "AWS pricing graphs", path: "/"},
+    {name: "EC2 family comparator", path: "/ec2/"},
+    {name: "FX exposure", path: "/fx-exposure"},
+    {name: "S3 price history", path: "/s3PriceHistory"}
+  ],
+
+  dynamicPaths: async function* () {
+    const {rows} = await readCatalogText();
+    const families = [...new Set(rows.map((d) => d.family).filter(Boolean))].sort();
+    for (const family of families) yield `/ec2/${family}`;
+  },
 
   // Content to add to the head of the page, e.g. for a favicon:
   head: `
