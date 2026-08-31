@@ -23,6 +23,16 @@ pricing basket.
   Observable source-root configuration.
 - `dist/`: generated static output; do not commit it.
 
+## Scoped context
+
+Read the nearest scoped `AGENTS.md` before changing a specialized area:
+
+- `src/ec2/AGENTS.md`: EC2 comparator product intent, anchor semantics,
+  Observable/Plot patterns, current decisions, and validation.
+
+Keep this root file limited to repository-wide rules. Put page-specific context
+beside the page so an agent only loads it when relevant.
+
 ## Commands
 
 ```sh
