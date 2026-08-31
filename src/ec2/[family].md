@@ -103,8 +103,9 @@ Inputs.table(directSpecs, {
 
 ```js
 const chartData = [
-  {...relativeTo(anchor, anchor), comparison_group: "Anchor", group_label: "Anchor"},
-  ...groups.generations.map((d) => ({...d, comparison_group: "Generations", group_label: "Gen"})),
+  ...[...groups.generations, relativeTo(anchor, anchor)]
+    .sort((a, b) => +a.generation - +b.generation || a.instance_type.localeCompare(b.instance_type))
+    .map((d) => ({...d, comparison_group: "Generations", group_label: d.instance_type === anchor.instance_type ? "Anchor" : "Gen"})),
   ...groups.cpus.map((d) => ({...d, comparison_group: "CPU alternatives", group_label: "CPU"})),
   ...groups.variants.map((d) => ({...d, comparison_group: "Variant alternatives", group_label: "Variant"}))
 ].map((d) => ({
@@ -142,7 +143,19 @@ resize((width) => Plot.plot({
 
 </div>
 
-Positive values are costlier than the anchor; negative values are cheaper. The anchor is 0% and price index 100.
+Equivalent generations are ordered oldest to newest around the anchor: earlier generations appear above it and later generations below it. Positive values are costlier than the anchor; negative values are cheaper. The anchor is 0% and price index 100.
+
+## Anchor data
+
+This is the selected baseline used by every table below.
+
+```js
+Inputs.table([{...anchor, monthly_cost: anchor.price_usd_per_hour * MONTHLY_HOURS, relative_difference: 0, price_index: 100}], {
+  columns: ["instance_type", "generation", "processor", "variant_label", "vcpu", "memory_gib", "price_usd_per_hour", "monthly_cost", "relative_difference", "price_index"],
+  header: {instance_type: "Instance", generation: "Generation", processor: "CPU", variant_label: "Variant", vcpu: "vCPU", memory_gib: "GiB", price_usd_per_hour: "USD/hour", monthly_cost: "USD/730h", relative_difference: "Vs anchor", price_index: "Index"},
+  format: {price_usd_per_hour: (d) => money(d), monthly_cost: (d) => money(d, 2), relative_difference: formatDelta, price_index: (d) => d.toFixed(1)}
+})
+```
 
 ## Equivalent generations
 
@@ -158,10 +171,29 @@ Inputs.table(groups.cpus, {columns: ["instance_type", "processor", "vcpu", "memo
 
 ## Capability variants
 
-These are contextual alternatives, not equivalent products. Network, local storage, and other capability differences remain visible.
+These are contextual alternatives, not equivalent products. The anchor is repeated first; “What changes” lists only specifications that differ from it.
 
 ```js
-Inputs.table(groups.variants, {columns: ["instance_type", "variant_label", "network_performance", "storage", "price_usd_per_hour", "relative_difference", "monthly_difference"], header: {instance_type: "Instance", variant_label: "Variant", network_performance: "Network", storage: "Storage", price_usd_per_hour: "USD/hour", relative_difference: "Vs anchor", monthly_difference: "USD/730h"}, format: {price_usd_per_hour: (d) => money(d), relative_difference: formatDelta, monthly_difference: (d) => money(d, 2)}})
+const changedSpecification = (candidate) => [
+  ["vCPU", anchor.vcpu, candidate.vcpu, (d) => d ?? "Unavailable"],
+  ["Memory", anchor.memory_gib, candidate.memory_gib, (d) => d == null ? "Unavailable" : `${d} GiB`],
+  ["Network", anchor.network_performance, candidate.network_performance, (d) => d || "Unavailable"],
+  ["Storage", anchor.storage, candidate.storage, (d) => d || "Unavailable"]
+].filter(([, before, after]) => String(before ?? "") !== String(after ?? ""))
+  .map(([label, before, after, format]) => `${label}: ${format(before)} → ${format(after)}`)
+  .join("; ") || "No listed specification change";
+const capabilityRows = [
+  {...relativeTo(anchor, anchor), comparison_role: "Anchor", specification_changes: "Selected baseline"},
+  ...groups.variants.map((d) => ({...d, comparison_role: "Alternative", specification_changes: changedSpecification(d)}))
+];
+```
+
+```js
+Inputs.table(capabilityRows, {
+  columns: ["comparison_role", "instance_type", "variant_label", "specification_changes", "price_usd_per_hour", "relative_difference", "monthly_difference"],
+  header: {comparison_role: "Role", instance_type: "Instance", variant_label: "Variant", specification_changes: "What changes from anchor", price_usd_per_hour: "USD/hour", relative_difference: "Vs anchor", monthly_difference: "Difference USD/730h"},
+  format: {price_usd_per_hour: (d) => money(d), relative_difference: formatDelta, monthly_difference: (d) => money(d, 2)}
+})
 ```
 
 ## Complete ${family.toUpperCase()} matrix for size ${size}
