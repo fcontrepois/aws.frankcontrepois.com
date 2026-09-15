@@ -74,18 +74,25 @@ const groups = comparatorGroups(anchor, familyRows);
 const {older, newer} = directGenerationPeers(anchor, groups.generations);
 const cheapestCpu = groups.cpus.toSorted((a, b) => a.price_usd_per_hour - b.price_usd_per_hour)[0] ?? null;
 const money = (value, digits = 4) => value == null ? "Unavailable" : `${+value < 0 ? "-" : ""}$${Math.abs(+value).toFixed(digits)}`;
-const peerSentence = (label, peer) => peer ? `${label} ${peer.instance_type} is ${formatDelta(peer.relative_difference)} (${money(peer.hourly_difference)}/hour) relative to ${anchor.instance_type}.` : `No exact ${label.toLowerCase()} is available for this processor, variant, size, and region.`;
+const comparisonSentence = (label, peer) => {
+  if (!peer) return `No exact ${label.toLowerCase()} is available for this processor, variant, size, and region.`;
+  const percent = `${Math.abs(peer.relative_difference * 100).toFixed(1)}%`;
+  const comparison = peer.relative_difference > 0
+    ? `${percent} more expensive than`
+    : peer.relative_difference < 0
+      ? `${percent} cheaper than`
+      : `the same price as`;
+  return `The ${label.toLowerCase()}, ${peer.instance_type}, is ${comparison} the anchor, ${anchor.instance_type}.`;
+};
 ```
 
 ## ${anchor.instance_type}
 
-${peerSentence("Direct predecessor", older)} ${peerSentence("Direct successor", newer)}
-
 <div class="grid grid-cols-4">
-  <div class="card"><h2>Anchor</h2><span class="big">${money(anchor.price_usd_per_hour)}</span><p>${money(anchor.price_usd_per_hour * MONTHLY_HOURS, 2)} per 730-hour month</p></div>
-  <div class="card"><h2>Direct predecessor</h2><span class="big">${older ? formatDelta(older.relative_difference) : "Unavailable"}</span><p>${older?.instance_type ?? "No exact equivalent"}</p></div>
-  <div class="card"><h2>Direct successor</h2><span class="big">${newer ? formatDelta(newer.relative_difference) : "Unavailable"}</span><p>${newer?.instance_type ?? "No exact equivalent"}</p></div>
-  <div class="card"><h2>Cheapest CPU peer</h2><span class="big">${cheapestCpu ? formatDelta(cheapestCpu.relative_difference) : "Unavailable"}</span><p>${cheapestCpu?.instance_type ?? "No exact equivalent"}</p></div>
+  <div class="card"><h2>Anchor</h2><span class="big">${money(anchor.price_usd_per_hour)}</span><p>The selected anchor costs ${money(anchor.price_usd_per_hour * MONTHLY_HOURS, 2)} per 730-hour month.</p></div>
+  <div class="card"><h2>Direct predecessor</h2><span class="big">${older ? formatDelta(older.relative_difference) : "Unavailable"}</span><p>${comparisonSentence("Direct predecessor", older)}</p></div>
+  <div class="card"><h2>Direct successor</h2><span class="big">${newer ? formatDelta(newer.relative_difference) : "Unavailable"}</span><p>${comparisonSentence("Direct successor", newer)}</p></div>
+  <div class="card"><h2>Cheapest CPU peer</h2><span class="big">${cheapestCpu ? formatDelta(cheapestCpu.relative_difference) : "Unavailable"}</span><p>${comparisonSentence("Cheapest CPU peer", cheapestCpu)}</p></div>
 </div>
 
 ## Direct specifications
