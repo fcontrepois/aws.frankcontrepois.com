@@ -17,8 +17,10 @@ pricing basket.
   cached and bundled during the build.
 - `src/data/*.csv`: small checked-in static datasets.
 - `src/components/`: reusable browser-side JavaScript helpers.
-- `src/ec2/index.md` and `src/ec2/[family].md`: catalogue discovery and
-  parameterized, anchor-relative EC2 family comparison pages.
+- `src/comparisons/`: parameterized page loaders for anchor-relative managed
+  service instance comparisons.
+- `lib/instance-comparisons/`: comparison service registry and server-side
+  adapters used by parameterized loaders.
 - `observablehq.config.js`: site metadata, navigation, theme, analytics, and
   Observable source-root configuration.
 - `dist/`: generated static output; do not commit it.
@@ -27,8 +29,8 @@ pricing basket.
 
 Read the nearest scoped `AGENTS.md` before changing a specialized area:
 
-- `src/ec2/AGENTS.md`: EC2 comparator product intent, anchor semantics,
-  Observable/Plot patterns, current decisions, and validation.
+- `src/comparisons/AGENTS.md`: instance comparator product intent, anchor
+  semantics, Observable/Plot patterns, current decisions, and validation.
 
 Keep this root file limited to repository-wide rules. Put page-specific context
 beside the page so an agent only loads it when relevant.
@@ -86,10 +88,11 @@ Observable's reactive cells, Plot, Inputs, and `FileAttachment` over custom
 client infrastructure. Put shared logic in `src/components/` only after it has
 more than one likely consumer.
 
-The EC2 comparator consumes `ec2-family-catalog.csv`. Use
-`EC2_CATALOG_SOURCE=test/fixtures/ec2-family-catalog.csv npm run build` for a
-network-free fixture build. Its dynamic paths must remain data-driven, and all
-candidate deltas must use the selected exact instance as their anchor.
+The service comparators consume compact family catalogues. Use both
+`EC2_CATALOG_SOURCE=test/fixtures/ec2-family-catalog.csv` and
+`RDS_CATALOG_SOURCE=test/fixtures/rds-family-catalog.csv` for a network-free
+fixture build. Dynamic paths must remain data-driven, and all candidate deltas
+must use the selected exact instance as their anchor.
 
 ## Cross-repository coordination
 

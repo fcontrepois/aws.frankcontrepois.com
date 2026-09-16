@@ -17,8 +17,8 @@ export function available(rows) {
   return rows.filter((d) => d.status === "available" && Number.isFinite(+d.price_usd_per_hour));
 }
 
-export function lineageKey(d) {
-  return [d.family, d.generation, d.processor, d.variant].join("|");
+export function lineageKey(d, dimensions = []) {
+  return [d.family, d.generation, d.processor, d.variant, ...dimensions.map((dimension) => d[dimension])].join("|");
 }
 
 export function relativeTo(anchor, candidate) {
@@ -35,10 +35,11 @@ export function relativeTo(anchor, candidate) {
   };
 }
 
-export function comparatorGroups(anchor, rows) {
+export function comparatorGroups(anchor, rows, {fixedDimensions = []} = {}) {
   if (!anchor) return {generations: [], cpus: [], variants: []};
+  const same = (candidate, dimensions) => dimensions.every((dimension) => candidate[dimension] === anchor[dimension]);
   const peers = available(rows).filter((d) =>
-    d.family === anchor.family && d.size === anchor.size && d.region_code === anchor.region_code
+    same(d, ["family", "size", "region_code", ...fixedDimensions])
   );
   const generations = peers.filter((d) =>
     d.processor === anchor.processor && d.variant === anchor.variant && d.generation !== anchor.generation
@@ -67,13 +68,13 @@ export function latestMonth(rows) {
   return rows.reduce((latest, d) => monthKey(d.as_of_month) > latest ? monthKey(d.as_of_month) : latest, "");
 }
 
-export function newThisMonth(rows) {
+export function newThisMonth(rows, {fixedDimensions = []} = {}) {
   const month = latestMonth(rows);
-  const seenBefore = new Set(rows.filter((d) => monthKey(d.first_observed_month) < month).map(lineageKey));
+  const seenBefore = new Set(rows.filter((d) => monthKey(d.first_observed_month) < month).map((d) => lineageKey(d, fixedDimensions)));
   const newlyObserved = rows.filter((d) => monthKey(d.first_observed_month) === month);
   const grouped = new Map();
   for (const row of newlyObserved) {
-    const key = lineageKey(row);
+    const key = lineageKey(row, fixedDimensions);
     if (!grouped.has(key)) grouped.set(key, []);
     grouped.get(key).push(row);
   }
@@ -86,11 +87,11 @@ export function newThisMonth(rows) {
       processor: values[0].processor,
       variant: values[0].variant,
       variant_label: values[0].variant_label,
-      size_count: values.length,
-      sizes: values.map((d) => d.size).sort(),
+      size_count: new Set(values.map((d) => d.size)).size,
+      sizes: [...new Set(values.map((d) => d.size))].sort(),
       representative: values.find((d) => d.size === "large") ?? values[0]
     };
-    if (seenBefore.has(lineageKey(values[0]))) newSizes.push(...values);
+    if (seenBefore.has(lineageKey(values[0], fixedDimensions))) newSizes.push(...values);
     else newLineages.push(summary);
   }
   return {month, newLineages, newSizes};

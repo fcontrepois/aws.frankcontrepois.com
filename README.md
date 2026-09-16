@@ -60,12 +60,16 @@ consumed here.
 - **Manual S3 history:** `src/s3PriceHistory.md` contains a curated series based
   on AWS price-reduction announcements because the current AWS Pricing API does
   not expose the required historical series.
-- **EC2 family catalogue:** `src/data/ec2-family-catalog.csv.js` downloads the
-  compact current as-of catalogue produced by the sibling repository. `/ec2/`
-  shows newly observed lineages and sizes; `/ec2/<family>` provides an
-  anchor-relative family comparator. Set `EC2_CATALOG_SOURCE` to an explicit
-  local CSV path for deterministic local builds; production never silently
-  falls back to fixture data.
+- **Instance comparisons:** parameterized Observable page loaders under
+  `src/comparisons/` generate service and family pages from embedded reusable
+  Markdown templates and the service registry in `lib/instance-comparisons/`.
+  The parameterized
+  `src/data/[service]-family-catalog.csv.js` loader dispatches to the matching
+  service adapter. EC2 and RDS are registered services; RDS keeps engine,
+  edition, licensing, deployment, storage mode, and AWS operation fixed for
+  equivalent peers. Set the service-specific `*_CATALOG_SOURCE` variable to an
+  explicit local CSV path for deterministic local builds; production never
+  silently falls back to fixture data.
 
 ## Principles
 

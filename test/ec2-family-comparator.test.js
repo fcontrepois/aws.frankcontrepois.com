@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {comparatorGroups, directGenerationPeers, newThisMonth, relativeTo} from "../src/components/ec2-family-comparator.js";
+import {comparatorGroups, directGenerationPeers, newThisMonth, relativeTo} from "../src/components/instance-family-comparator.js";
 
 const row = (instance_type, generation, processor, variant, price, extra = {}) => ({
   instance_type, family: "m", generation, processor, variant, size: "large",
@@ -37,6 +37,14 @@ test("missing rows do not participate in price math", () => {
   assert.equal(relativeTo(anchor, missing), null);
 });
 
+test("service-specific dimensions remain fixed", () => {
+  const anchor = row("db.m7g.large", 7, "graviton", "standard", 0.10, {engine: "postgres"});
+  const sameEngine = row("db.m6g.large", 6, "graviton", "standard", 0.12, {engine: "postgres"});
+  const otherEngine = row("db.m6g.large", 6, "graviton", "standard", 0.14, {engine: "mysql"});
+  const groups = comparatorGroups(anchor, [anchor, sameEngine, otherEngine], {fixedDimensions: ["engine"]});
+  assert.deepEqual(groups.generations.map((d) => d.engine), ["postgres"]);
+});
+
 test("new lineages and sizes are distinct", () => {
   const rows = [
     row("m7i.large", 7, "intel", "standard", 0.10, {first_observed_month: "2026-07"}),
@@ -48,4 +56,14 @@ test("new lineages and sizes are distinct", () => {
   assert.equal(news.newLineages.length, 1);
   assert.equal(news.newLineages[0].size_count, 2);
   assert.deepEqual(news.newSizes.map((d) => d.instance_type), ["m7i.xlarge"]);
+});
+
+test("new lineage grouping preserves service pricing context", () => {
+  const rows = [
+    row("db.m7g.large", 7, "graviton", "standard", 0.10, {database_engine: "PostgreSQL", first_observed_month: "2026-08"}),
+    row("db.m7g.large", 7, "graviton", "standard", 0.12, {database_engine: "MySQL", first_observed_month: "2026-08"})
+  ];
+  const news = newThisMonth(rows, {fixedDimensions: ["database_engine"]});
+  assert.equal(news.newLineages.length, 2);
+  assert.deepEqual(news.newLineages.map((d) => d.size_count), [1, 1]);
 });

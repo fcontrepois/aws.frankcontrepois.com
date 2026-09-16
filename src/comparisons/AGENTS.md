@@ -1,12 +1,13 @@
-# EC2 comparator agent context
+# Instance comparator agent context
 
 ## Scope and user outcome
 
-This directory implements one parameterized page per broad EC2 family, such as
-`/ec2/m`, `/ec2/r`, and `/ec2/g`. The intended use is podcast preparation: when
-AWS announces a new instance generation or variant, a visitor can select one
-exact instance as an anchor and quickly answer whether comparable generations,
-CPU types, or capability variants cost more or less.
+This directory implements reusable parameterized pages for AWS services with
+instance-like pricing. Routes follow `/comparisons/<service>/<family>`, such as
+`/comparisons/ec2/m`. The intended use is podcast preparation: when AWS
+announces a new instance generation or variant, a visitor can select one exact
+managed-service instance as an anchor and quickly answer whether comparable
+generations, CPU types, or capability variants cost more or less.
 
 Read the repository-root `AGENTS.md` first. For producer/schema changes, also
 read `pipeline/pricing-basket/AGENTS.md` in the sibling
@@ -18,15 +19,32 @@ read `pipeline/pricing-basket/AGENTS.md` in the sibling
 sibling fg220 CodeBuild job
   -> s3://data.frankcontrepois.com/FinOpsGuyAwsPricingElaboratedData/
        ec2-family-catalog.csv
-  -> src/data/ec2-family-catalog.csv.js loader
-  -> FileAttachment("../data/ec2-family-catalog.csv")
-  -> parameterized family pages
+       rds-family-catalog.csv
+  -> src/data/[service]-family-catalog.csv.js loader
+  -> FileAttachment("../../data/<service>-family-catalog.csv")
+  -> parameterized page loader and shared Markdown template
 ```
 
 The loader defaults to the public S3 path-style HTTPS endpoint. The custom
 `data.frankcontrepois.com` CloudFront endpoint returned a stale 404 during the
 2026-08 release; do not change the loader back without testing a real build.
 The browser never calls AWS APIs.
+
+## Adding a comparison service
+
+Add one adapter under `lib/instance-comparisons/services/` and register it in
+`lib/instance-comparisons/registry.js`. The adapter supplies display language,
+pricing scope, source notes, a catalogue reader, comparison policy, and any
+service-specific `contextDimensions`. Context dimensions become one combined
+configuration selector on the shared family page; they must also appear in the
+policy's `fixedDimensions` so peers cannot cross engines, deployment models,
+licence models, node roles, or similar service boundaries.
+
+The service catalogue must normalize its common fields to the existing EC2
+catalogue contract. Service-specific context columns may be appended. Adding a
+service to the registry automatically adds its sidebar entry, service index
+route, family routes, and parameterized catalogue loader. Add its card to
+`src/comparisons/index.md` as the editorial entry point.
 
 ## Comparison contract
 
@@ -51,7 +69,7 @@ keeps exact-size comparisons.
 
 ## Page structure and current UX
 
-`[family].md` currently presents:
+The shared family-page template currently presents:
 
 1. latest-month/new-lineage banner;
 2. generation, processor, variant, and size anchor controls;
@@ -76,8 +94,8 @@ Use standard Observable Framework and Observable Plot only. Prefer:
 - `FileAttachment` for loader results;
 - `Inputs.select` and `Inputs.table` for controls and tables;
 - `Plot.plot`, Plot marks, and `resize` for responsive charts;
-- parameterized routes from `observable.params` and data-driven
-  `dynamicPaths` in `observablehq.config.js`.
+- parameterized page loaders and data-driven `dynamicPaths` in
+  `observablehq.config.js`.
 
 Do not introduce React, another chart library, custom routing, client fetches,
 or a separate application framework. Keep calculation cells separate from
@@ -104,17 +122,22 @@ viewport. G is useful for variants; I with `generation=3`, `processor=intel`,
 
 ## Shared code and tests
 
-- `../components/ec2-family-comparator.js` owns normalization of typed CSV
-  dates, peer selection, anchor-relative math, latest-month news, and defaults.
+- `../components/instance-family-comparator.js` owns normalization of typed CSV
+  dates, policy-driven peer selection, anchor-relative math, latest-month news,
+  and defaults.
+- `../../lib/instance-comparisons/` owns the service registry and server-side
+  adapters. Each parameterized page loader embeds its Markdown template so
+  Framework's cache is invalidated when that template changes.
 - `../../test/ec2-family-comparator.test.js` protects comparison dimensions,
   missing-data behavior, and new-lineage detection.
-- `../../test/fixtures/ec2-family-catalog.csv` supports network-free builds.
+- `../../test/fixtures/*-family-catalog.csv` supports network-free builds.
 
 Validate changes with:
 
 ```sh
 npm test
-EC2_CATALOG_SOURCE=test/fixtures/ec2-family-catalog.csv npm run build
+EC2_CATALOG_SOURCE=test/fixtures/ec2-family-catalog.csv \
+RDS_CATALOG_SOURCE=test/fixtures/rds-family-catalog.csv npm run build
 ```
 
 For release validation, also build against the production loader and inspect a

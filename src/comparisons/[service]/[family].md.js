@@ -1,45 +1,108 @@
+import {readFile} from "node:fs/promises";
+import {parseArgs} from "node:util";
+import {fileURLToPath} from "node:url";
+import {instanceComparisonService} from "../../../lib/instance-comparisons/registry.js";
+
+const templateStart = "/* __PAGE_TEMPLATE__\n";
+const templateEnd = "\n__END_PAGE_TEMPLATE__ */";
+
+export async function renderFamilyPage(service, family) {
+  const source = await readFile(fileURLToPath(import.meta.url), "utf8");
+  let page = source.slice(source.indexOf(templateStart) + templateStart.length, source.lastIndexOf(templateEnd));
+  const values = {
+    SERVICE_SHORT_NAME: service.shortName,
+    NOUN: service.noun,
+    NOUN_TITLE: service.noun.replace(/^./, (character) => character.toUpperCase()),
+    PRICE_SCOPE: service.priceScope,
+    COMPARISON_NOTE: service.comparisonNote,
+    COMPARISON_POLICY: JSON.stringify(service.comparisonPolicy),
+    CONTEXT_DIMENSIONS: JSON.stringify(service.contextDimensions),
+    CONTEXT_DEFAULTS: JSON.stringify(service.contextDefaults),
+    EQUIVALENCE_SCOPE: service.equivalenceScope,
+    CATALOG_ATTACHMENT: JSON.stringify(`../../data/${service.id}-family-catalog.csv`),
+    FAMILY: JSON.stringify(String(family).toLowerCase())
+  };
+  for (const [name, value] of Object.entries(values)) page = page.replaceAll(`@@${name}@@`, String(value));
+  return page;
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const {values: {service, family}} = parseArgs({
+    options: {service: {type: "string"}, family: {type: "string"}}
+  });
+  process.stdout.write(await renderFamilyPage(instanceComparisonService(service), family));
+}
+
+/* __PAGE_TEMPLATE__
 ---
-title: EC2 family comparison
+title: @@SERVICE_SHORT_NAME@@ family comparison
 theme: deep-space
 ---
 
 ```js
-import {available, comparatorGroups, defaultSelection, directGenerationPeers, formatDelta, latestMonth, newThisMonth, normalizeCatalog, relativeTo, MONTHLY_HOURS} from "../components/ec2-family-comparator.js";
-const family = observable.params.family.toLowerCase();
-const catalog = normalizeCatalog(await FileAttachment("../data/ec2-family-catalog.csv").csv({typed: true}));
+import {available, comparatorGroups, defaultSelection, directGenerationPeers, formatDelta, latestMonth, newThisMonth, normalizeCatalog, relativeTo, MONTHLY_HOURS} from "../../components/instance-family-comparator.js";
+const family = @@FAMILY@@;
+const comparisonPolicy = @@COMPARISON_POLICY@@;
+const contextDimensions = @@CONTEXT_DIMENSIONS@@;
+const contextDefaults = @@CONTEXT_DEFAULTS@@;
+const catalog = normalizeCatalog(await FileAttachment(@@CATALOG_ATTACHMENT@@).csv({typed: true}));
 const familyRows = catalog.filter((d) => d.family === family);
-if (!familyRows.length) throw new Error(`Unknown EC2 family: ${family}`);
+if (!familyRows.length) throw new Error(`Unknown @@SERVICE_SHORT_NAME@@ family: ${family}`);
 const pricedRows = available(familyRows);
+const contextKey = (row) => contextDimensions.map(({field}) => JSON.stringify(row[field] ?? null)).join("|");
+const sameContext = (a, b) => contextKey(a) === contextKey(b);
+const contextProfiles = pricedRows.filter((row, index, rows) => rows.findIndex((candidate) => sameContext(row, candidate)) === index);
 const defaults = defaultSelection(familyRows);
 const snapshot = latestMonth(familyRows);
-const familyNews = newThisMonth(familyRows);
+const familyNews = newThisMonth(familyRows, comparisonPolicy);
 const familyNewsBanner = familyNews.newLineages.length
   ? html`<div class="tip"><strong>First observed this month:</strong> ${familyNews.newLineages.map((d) => `${family}${d.generation} ${d.processor} / ${d.variant_label} (${d.size_count} ${d.size_count === 1 ? "size" : "sizes"})`).join("; ")}.</div>`
   : html`<div class="note">No new ${family.toUpperCase()} lineages were first observed in ${snapshot}.</div>`;
 ```
 
-# ${family.toUpperCase()} family price comparator
+# @@SERVICE_SHORT_NAME@@ ${family.toUpperCase()} family price comparator
 
-Anchor the analysis on one exact instance type. Every percentage below compares the candidate with that selected anchor—not with the newest generation or with the preceding row.
+Anchor the analysis on one exact @@NOUN@@ type. Every percentage below compares the candidate with that selected anchor—not with the newest generation or with the preceding row.
 
-**Snapshot:** ${snapshot} · **Region:** us-east-1 · **Price:** Linux On-Demand USD list price
+**Snapshot:** ${snapshot} · **Region:** us-east-1 · **Price:** @@PRICE_SCOPE@@
 
 ${familyNewsBanner}
 
 ## Choose the anchor
 
+```js
+const defaultContextProfile = contextProfiles.find((row) => Object.entries(contextDefaults).every(([field, value]) => row[field] === value)) ?? contextProfiles[0];
+const defaultContextIndex = contextProfiles.indexOf(defaultContextProfile);
+const contextProfileIndex = contextDimensions.length
+  ? view(Inputs.select(contextProfiles.map((_, index) => index), {
+      label: "Configuration",
+      value: defaultContextIndex,
+      format: (index) => {
+        const row = contextProfiles[index];
+        return contextDimensions.map(({field, label}) => `${label}: ${row[field]}`).join(" · ");
+      }
+    }))
+  : null;
+```
+
+```js
+const contextProfile = contextProfileIndex == null ? null : contextProfiles[contextProfileIndex];
+const anchorRows = contextProfile ? pricedRows.filter((row) => sameContext(row, contextProfile)) : pricedRows;
+```
+
 <div class="grid grid-cols-4">
 <div class="card">
 
 ```js
-const generation = view(Inputs.select([...new Set(pricedRows.map((d) => d.generation))].sort((a, b) => b - a), {label: "Generation", value: defaults.generation}));
+const generationOptions = [...new Set(anchorRows.map((d) => d.generation))].sort((a, b) => b - a);
+const generation = view(Inputs.select(generationOptions, {label: "Generation", value: generationOptions.includes(defaults.generation) ? defaults.generation : generationOptions[0]}));
 ```
 
 </div>
 <div class="card">
 
 ```js
-const processorRows = pricedRows.filter((d) => +d.generation === +generation);
+const processorRows = anchorRows.filter((d) => +d.generation === +generation);
 const processorOptions = [...new Set(processorRows.map((d) => d.processor))].sort();
 const processor = view(Inputs.select(processorOptions, {label: "Processor", value: processorOptions.includes(defaults.processor) ? defaults.processor : processorOptions[0]}));
 ```
@@ -70,12 +133,12 @@ const anchor = sizeRows.find((d) => d.size === size);
 ```
 
 ```js
-const groups = comparatorGroups(anchor, familyRows);
+const groups = comparatorGroups(anchor, familyRows, comparisonPolicy);
 const {older, newer} = directGenerationPeers(anchor, groups.generations);
 const cheapestCpu = groups.cpus.toSorted((a, b) => a.price_usd_per_hour - b.price_usd_per_hour)[0] ?? null;
 const money = (value, digits = 4) => value == null ? "Unavailable" : `${+value < 0 ? "-" : ""}$${Math.abs(+value).toFixed(digits)}`;
 const comparisonSentence = (label, peer) => {
-  if (!peer) return `No exact ${label.toLowerCase()} is available for this processor, variant, size, and region.`;
+  if (!peer) return `No exact ${label.toLowerCase()} is available for this @@EQUIVALENCE_SCOPE@@.`;
   const percent = `${Math.abs(peer.relative_difference * 100).toFixed(1)}%`;
   const comparison = peer.relative_difference > 0
     ? `${percent} more expensive than`
@@ -99,9 +162,11 @@ const comparisonSentence = (label, peer) => {
 
 ```js
 const directSpecs = [anchor, older, newer, cheapestCpu].filter(Boolean).filter((d, i, values) => values.findIndex((x) => x.instance_type === d.instance_type) === i);
+const contextFields = contextDimensions.map(({field}) => field);
+const contextHeaders = Object.fromEntries(contextDimensions.map(({field, label}) => [field, label]));
 Inputs.table(directSpecs, {
-  columns: ["instance_type", "processor", "variant_label", "vcpu", "memory_gib", "physical_processor", "processor_architecture", "network_performance", "storage", "price_usd_per_hour"],
-  header: {instance_type: "Instance", processor: "CPU", variant_label: "Variant", vcpu: "vCPU", memory_gib: "GiB", physical_processor: "Physical processor", processor_architecture: "Architecture", network_performance: "Network", storage: "Storage", price_usd_per_hour: "USD/hour"},
+  columns: ["instance_type", ...contextFields, "processor", "variant_label", "vcpu", "memory_gib", "physical_processor", "processor_architecture", "network_performance", "storage", "price_usd_per_hour"],
+  header: {instance_type: "@@NOUN_TITLE@@", ...contextHeaders, processor: "CPU", variant_label: "Variant", vcpu: "vCPU", memory_gib: "GiB", physical_processor: "Physical processor", processor_architecture: "Architecture", network_performance: "Network", storage: "Storage", price_usd_per_hour: "USD/hour"},
   format: {price_usd_per_hour: (d) => money(d)}
 })
 ```
@@ -158,8 +223,8 @@ This is the selected baseline used by every table below.
 
 ```js
 Inputs.table([{...anchor, monthly_cost: anchor.price_usd_per_hour * MONTHLY_HOURS, relative_difference: 0, price_index: 100}], {
-  columns: ["instance_type", "generation", "processor", "variant_label", "vcpu", "memory_gib", "price_usd_per_hour", "monthly_cost", "relative_difference", "price_index"],
-  header: {instance_type: "Instance", generation: "Generation", processor: "CPU", variant_label: "Variant", vcpu: "vCPU", memory_gib: "GiB", price_usd_per_hour: "USD/hour", monthly_cost: "USD/730h", relative_difference: "Vs anchor", price_index: "Index"},
+  columns: ["instance_type", ...contextFields, "generation", "processor", "variant_label", "vcpu", "memory_gib", "price_usd_per_hour", "monthly_cost", "relative_difference", "price_index"],
+  header: {instance_type: "Instance", ...contextHeaders, generation: "Generation", processor: "CPU", variant_label: "Variant", vcpu: "vCPU", memory_gib: "GiB", price_usd_per_hour: "USD/hour", monthly_cost: "USD/730h", relative_difference: "Vs anchor", price_index: "Index"},
   format: {price_usd_per_hour: (d) => money(d), monthly_cost: (d) => money(d, 2), relative_difference: formatDelta, price_index: (d) => d.toFixed(1)}
 })
 ```
@@ -206,7 +271,8 @@ Inputs.table(capabilityRows, {
 ## Complete ${family.toUpperCase()} matrix for size ${size}
 
 ```js
-Inputs.table(familyRows.filter((d) => d.size === size), {columns: ["instance_type", "status", "processor", "variant_label", "vcpu", "memory_gib", "price_usd_per_hour", "last_price_usd_per_hour", "first_observed_month"], header: {instance_type: "Instance", status: "Status", processor: "CPU", variant_label: "Variant", vcpu: "vCPU", memory_gib: "GiB", price_usd_per_hour: "Current USD/hour", last_price_usd_per_hour: "Last USD/hour", first_observed_month: "First observed"}, format: {price_usd_per_hour: (d) => money(d), last_price_usd_per_hour: (d) => money(d)}})
+Inputs.table(anchorRows.filter((d) => d.size === size), {columns: ["instance_type", "status", "processor", "variant_label", "vcpu", "memory_gib", "price_usd_per_hour", "last_price_usd_per_hour", "first_observed_month"], header: {instance_type: "Instance", status: "Status", processor: "CPU", variant_label: "Variant", vcpu: "vCPU", memory_gib: "GiB", price_usd_per_hour: "Current USD/hour", last_price_usd_per_hour: "Last USD/hour", first_observed_month: "First observed"}, format: {price_usd_per_hour: (d) => money(d), last_price_usd_per_hour: (d) => money(d)}})
 ```
 
-<div class="note">These are public list prices, excluding discounts, commitments, Spot, taxes, and software. A missing exact equivalent stays unavailable; the page never substitutes a different processor, variant, size, or region. Price per vCPU or GiB is not a performance benchmark.</div>
+<div class="note">@@COMPARISON_NOTE@@</div>
+__END_PAGE_TEMPLATE__ */

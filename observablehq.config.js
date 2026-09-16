@@ -1,5 +1,5 @@
 // See https://observablehq.com/framework/config for documentation.
-import {readCatalogText} from "./lib/ec2-catalog-source.js";
+import {instanceComparisonServices} from "./lib/instance-comparisons/registry.js";
 
 export default {
   // The app’s title; used in the sidebar and webpage titles.
@@ -10,15 +10,21 @@ export default {
   // lets you organize them into sections and have unlisted pages.
   pages: [
     {name: "AWS pricing graphs", path: "/"},
-    {name: "EC2 family comparator", path: "/ec2/"},
+    {name: "Instance comparisons", pages: [
+      {name: "Overview", path: "/comparisons/"},
+      ...instanceComparisonServices.map((service) => ({name: service.shortName, path: `/comparisons/${service.id}/`}))
+    ]},
     {name: "FX exposure", path: "/fx-exposure"},
     {name: "S3 price history", path: "/s3PriceHistory"}
   ],
 
   dynamicPaths: async function* () {
-    const {rows} = await readCatalogText();
-    const families = [...new Set(rows.map((d) => d.family).filter(Boolean))].sort();
-    for (const family of families) yield `/ec2/${family}`;
+    for (const service of instanceComparisonServices) {
+      const {rows} = await service.readCatalogText();
+      const families = [...new Set(rows.map((d) => d.family).filter(Boolean))].sort();
+      yield `/comparisons/${service.id}/`;
+      for (const family of families) yield `/comparisons/${service.id}/${family}`;
+    }
   },
 
   // Content to add to the head of the page, e.g. for a favicon:
