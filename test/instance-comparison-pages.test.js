@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {instanceComparisonService} from "../lib/instance-comparisons/registry.js";
 import {renderServiceIndex} from "../src/comparisons/[service]/index.md.js";
-import {renderFamilyPage} from "../src/comparisons/[service]/[family].md.js";
+import {renderContextControls, renderFamilyPage} from "../src/comparisons/[service]/[family].md.js";
 
 test("service index renderer produces resolved Observable Markdown", async () => {
   const page = await renderServiceIndex(instanceComparisonService("ec2"));
@@ -18,7 +18,7 @@ test("family renderer bakes route values into the shared page", async () => {
   assert.match(page, /# EC2 \$\{family\.toUpperCase\(\)\} family price comparator/);
   assert.match(page, /comparatorGroups\(anchor, familyRows, comparisonPolicy\)/);
   assert.match(page, /const contextDimensions = \[\];/);
-  assert.match(page, /const anchorRows = contextProfile/);
+  assert.match(page, /const anchorRows = pricedRows/);
   assert.doesNotMatch(page, /observable\.params/);
   assert.doesNotMatch(page, /@@[A-Z0-9_]+@@/);
 });
@@ -31,6 +31,16 @@ test("RDS renderer fixes every pricing context dimension", async () => {
   assert.match(page, /"operation","label":"AWS pricing code"/);
   assert.match(page, /No exact \$\{label\.toLowerCase\(\)\} is available for this processor, variant, size, database configuration, and region/);
   assert.doesNotMatch(page, /@@[A-Z0-9_]+@@/);
+});
+
+test("context controls cascade through valid service configurations", () => {
+  const service = instanceComparisonService("rds");
+  const controls = renderContextControls(service);
+  assert.match(controls, /label: "Engine"/);
+  assert.match(controls, /contextRows1 = contextRows0\.filter/);
+  assert.match(controls, /label: "AWS pricing code"/);
+  assert.match(controls, /const anchorRows = contextRows6/);
+  assert.doesNotMatch(controls, /Configuration/);
 });
 
 test("unknown comparison services fail clearly", () => {

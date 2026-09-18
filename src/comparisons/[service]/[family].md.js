@@ -6,6 +6,17 @@ import {instanceComparisonService} from "../../../lib/instance-comparisons/regis
 const templateStart = "/* __PAGE_TEMPLATE__\n";
 const templateEnd = "\n__END_PAGE_TEMPLATE__ */";
 
+export function renderContextControls(service) {
+  if (!service.contextDimensions.length) return "```js\nconst anchorRows = pricedRows;\n```";
+  const cells = service.contextDimensions.map(({field, label}, index) => {
+    const sourceRows = `contextRows${index}`;
+    const targetRows = `contextRows${index + 1}`;
+    const options = `${field}Options`;
+    return `<div class="card">\n\n\`\`\`js\nconst ${options} = [...new Set(${sourceRows}.map((d) => d[${JSON.stringify(field)}]))].sort((a, b) => String(a).localeCompare(String(b)));\nconst ${field} = view(Inputs.select(${options}, {label: ${JSON.stringify(label)}, value: ${options}.includes(contextDefaults[${JSON.stringify(field)}]) ? contextDefaults[${JSON.stringify(field)}] : ${options}[0]}));\n\`\`\`\n\n\`\`\`js\nconst ${targetRows} = ${sourceRows}.filter((d) => d[${JSON.stringify(field)}] === ${field});\n\`\`\`\n\n</div>`;
+  });
+  return `\`\`\`js\nconst contextRows0 = pricedRows;\n\`\`\`\n\n<div class="grid grid-cols-3">\n${cells.join("\n")}\n</div>\n\n\`\`\`js\nconst anchorRows = contextRows${service.contextDimensions.length};\n\`\`\``;
+}
+
 export async function renderFamilyPage(service, family) {
   const source = await readFile(fileURLToPath(import.meta.url), "utf8");
   let page = source.slice(source.indexOf(templateStart) + templateStart.length, source.lastIndexOf(templateEnd));
@@ -18,6 +29,7 @@ export async function renderFamilyPage(service, family) {
     COMPARISON_POLICY: JSON.stringify(service.comparisonPolicy),
     CONTEXT_DIMENSIONS: JSON.stringify(service.contextDimensions),
     CONTEXT_DEFAULTS: JSON.stringify(service.contextDefaults),
+    CONTEXT_CONTROLS: renderContextControls(service),
     EQUIVALENCE_SCOPE: service.equivalenceScope,
     CATALOG_ATTACHMENT: JSON.stringify(`../../data/${service.id}-family-catalog.csv`),
     FAMILY: JSON.stringify(String(family).toLowerCase())
@@ -49,9 +61,6 @@ const catalog = normalizeCatalog(await FileAttachment(@@CATALOG_ATTACHMENT@@).cs
 const familyRows = catalog.filter((d) => d.family === family);
 if (!familyRows.length) throw new Error(`Unknown @@SERVICE_SHORT_NAME@@ family: ${family}`);
 const pricedRows = available(familyRows);
-const contextKey = (row) => contextDimensions.map(({field}) => JSON.stringify(row[field] ?? null)).join("|");
-const sameContext = (a, b) => contextKey(a) === contextKey(b);
-const contextProfiles = pricedRows.filter((row, index, rows) => rows.findIndex((candidate) => sameContext(row, candidate)) === index);
 const defaults = defaultSelection(familyRows);
 const snapshot = latestMonth(familyRows);
 const familyNews = newThisMonth(familyRows, comparisonPolicy);
@@ -70,25 +79,7 @@ ${familyNewsBanner}
 
 ## Choose the anchor
 
-```js
-const defaultContextProfile = contextProfiles.find((row) => Object.entries(contextDefaults).every(([field, value]) => row[field] === value)) ?? contextProfiles[0];
-const defaultContextIndex = contextProfiles.indexOf(defaultContextProfile);
-const contextProfileIndex = contextDimensions.length
-  ? view(Inputs.select(contextProfiles.map((_, index) => index), {
-      label: "Configuration",
-      value: defaultContextIndex,
-      format: (index) => {
-        const row = contextProfiles[index];
-        return contextDimensions.map(({field, label}) => `${label}: ${row[field]}`).join(" · ");
-      }
-    }))
-  : null;
-```
-
-```js
-const contextProfile = contextProfileIndex == null ? null : contextProfiles[contextProfileIndex];
-const anchorRows = contextProfile ? pricedRows.filter((row) => sameContext(row, contextProfile)) : pricedRows;
-```
+@@CONTEXT_CONTROLS@@
 
 <div class="grid grid-cols-4">
 <div class="card">
