@@ -49,6 +49,17 @@ build may reuse `src/.observablehq/cache`. When loader behavior or source access
 changes, use `npm run clean && npm run build` and expect AWS-backed loaders to
 require network access and valid AWS credentials.
 
+## Deployment
+
+Pushing `main` to GitHub triggers the connected Cloudflare Pages build and
+publishes `dist/` at `https://aws.frankcontrepois.com/`. The npm commands are
+for local development and release validation; this repository does not deploy
+through Observable Cloud. After a push, monitor the `Cloudflare Pages` check on
+the commit and verify a changed route on the canonical domain. The check can
+lag briefly behind the live promotion, so validate the response content rather
+than treating an HTTP 200 alone as proof: Cloudflare may serve the site's
+fallback page for a route that has not been deployed yet.
+
 ## Data conventions
 
 - Keep published datasets small and specific to a chart or question.
@@ -88,11 +99,18 @@ Observable's reactive cells, Plot, Inputs, and `FileAttachment` over custom
 client infrastructure. Put shared logic in `src/components/` only after it has
 more than one likely consumer.
 
-The service comparators consume compact family catalogues. Use both
-`EC2_CATALOG_SOURCE=test/fixtures/ec2-family-catalog.csv` and
-`RDS_CATALOG_SOURCE=test/fixtures/rds-family-catalog.csv` for a network-free
-fixture build. Dynamic paths must remain data-driven, and all candidate deltas
-must use the selected exact instance as their anchor.
+The service comparators consume compact family catalogues. Use the four
+service-specific fixture variables for a network-free build:
+
+```sh
+EC2_CATALOG_SOURCE=test/fixtures/ec2-family-catalog.csv
+RDS_CATALOG_SOURCE=test/fixtures/rds-family-catalog.csv
+ELASTICACHE_CATALOG_SOURCE=test/fixtures/elasticache-family-catalog.csv
+OPENSEARCH_CATALOG_SOURCE=test/fixtures/opensearch-family-catalog.csv
+```
+
+Dynamic paths must remain data-driven, and all candidate deltas must use the
+selected exact instance as their anchor.
 
 ## Cross-repository coordination
 
@@ -113,5 +131,6 @@ both repositories when columns or semantics change.
 - Do not edit generated files in `dist/` or cached files under
   `src/.observablehq/cache/` as source changes.
 - Preserve unrelated worktree changes.
-- Do not deploy with `npm run deploy` unless the user explicitly asks for a
-  deployment.
+- Do not run `observable deploy` or add `npm run deploy`; Observable Cloud is
+  not this site's hosting path. Production deployment is push-driven through
+  Cloudflare Pages and still requires explicit user authority to push.

@@ -43,6 +43,18 @@ test("context controls cascade through valid service configurations", () => {
   assert.doesNotMatch(controls, /Configuration/);
 });
 
+test("ElastiCache uses cache engine as a fixed comparison dimension", async () => {
+  const cache = instanceComparisonService("elasticache");
+  assert.deepEqual(cache.comparisonPolicy.fixedDimensions, ["cache_engine"]);
+  assert.match(await renderFamilyPage(cache, "m"), /# ElastiCache \$\{family\.toUpperCase\(\)\} family price comparator/);
+});
+
+test("OpenSearch uses the shared exact-instance comparison policy", async () => {
+  const search = instanceComparisonService("opensearch");
+  assert.deepEqual(search.comparisonPolicy.fixedDimensions, []);
+  assert.match(await renderFamilyPage(search, "r"), /# OpenSearch \$\{family\.toUpperCase\(\)\} family price comparator/);
+});
+
 test("unknown comparison services fail clearly", () => {
   assert.throws(() => instanceComparisonService("unknown"), /Unknown instance comparison service/);
 });

@@ -20,6 +20,8 @@ sibling fg220 CodeBuild job
   -> s3://data.frankcontrepois.com/FinOpsGuyAwsPricingElaboratedData/
        ec2-family-catalog.csv
        rds-family-catalog.csv
+       elasticache-family-catalog.csv
+       opensearch-family-catalog.csv
   -> src/data/[service]-family-catalog.csv.js loader
   -> FileAttachment("../../data/<service>-family-catalog.csv")
   -> parameterized page loader and shared Markdown template
@@ -30,15 +32,22 @@ The loader defaults to the public S3 path-style HTTPS endpoint. The custom
 2026-08 release; do not change the loader back without testing a real build.
 The browser never calls AWS APIs.
 
+The first RDS production backfill completed on 2026-09-16 for `2024-10`
+through `2026-09`. The September as-of catalogue contained 5,084 unique
+`catalog_key` rows: 5,053 available and 31 retained missing identities, with no
+duplicate keys or available rows missing a current price. The dated September
+and undated latest CSV and Parquet objects were byte-identical. Treat these as
+time-stamped release checks, not permanent expected row counts.
+
 ## Adding a comparison service
 
 Add one adapter under `lib/instance-comparisons/services/` and register it in
 `lib/instance-comparisons/registry.js`. The adapter supplies display language,
 pricing scope, source notes, a catalogue reader, comparison policy, and any
 service-specific `contextDimensions`. Context dimensions become one combined
-configuration selector on the shared family page; they must also appear in the
-policy's `fixedDimensions` so peers cannot cross engines, deployment models,
-licence models, node roles, or similar service boundaries.
+cascading selector per dimension on the shared family page; they must also
+appear in the policy's `fixedDimensions` so peers cannot cross engines,
+deployment models, licence models, node roles, or similar service boundaries.
 
 The service catalogue must normalize its common fields to the existing EC2
 catalogue contract. Service-specific context columns may be appended. Adding a
@@ -137,9 +146,12 @@ Validate changes with:
 ```sh
 npm test
 EC2_CATALOG_SOURCE=test/fixtures/ec2-family-catalog.csv \
-RDS_CATALOG_SOURCE=test/fixtures/rds-family-catalog.csv npm run build
+RDS_CATALOG_SOURCE=test/fixtures/rds-family-catalog.csv \
+ELASTICACHE_CATALOG_SOURCE=test/fixtures/elasticache-family-catalog.csv \
+OPENSEARCH_CATALOG_SOURCE=test/fixtures/opensearch-family-catalog.csv npm run build
 ```
 
 For release validation, also build against the production loader and inspect a
-real family page in the browser. Do not edit `dist/` or
-`src/.observablehq/cache/` as source.
+real family page in the browser. A push to GitHub `main` deploys through
+Cloudflare Pages; do not use Observable Cloud deployment commands. Do not edit
+`dist/` or `src/.observablehq/cache/` as source.

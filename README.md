@@ -19,6 +19,7 @@ repository should consume only compact extracts suitable for a static website.
 | `src/index.md` | Compare regional S3 and EC2 prices, EC2 generation availability, and service availability. | Observable data loaders calling AWS Pricing, EC2, and SSM APIs. |
 | `src/fx-exposure.md` | Show how exchange rates change the local-currency cost of a constant USD invoice. | Checked-in monthly ECB-derived CSV. |
 | `src/s3PriceHistory.md` | Present an editorial history of S3 Standard prices. | Manually curated AWS announcement dates and prices. |
+| `src/comparisons/` | Compare exact-size EC2, RDS, ElastiCache, and OpenSearch instance generations, processors, and capability variants against a selected anchor. | Cumulative family catalogues published by the sibling pricing pipeline. |
 
 Observable data loaders use names such as `src/data/example.csv.js`. During a
 build, Observable executes the JavaScript loader, captures its standard output
@@ -65,11 +66,12 @@ consumed here.
   Markdown templates and the service registry in `lib/instance-comparisons/`.
   The parameterized
   `src/data/[service]-family-catalog.csv.js` loader dispatches to the matching
-  service adapter. EC2 and RDS are registered services; RDS keeps engine,
-  edition, licensing, deployment, storage mode, and AWS operation fixed for
-  equivalent peers. Set the service-specific `*_CATALOG_SOURCE` variable to an
-  explicit local CSV path for deterministic local builds; production never
-  silently falls back to fixture data.
+  service adapter. EC2, RDS, ElastiCache, and OpenSearch are registered. RDS
+  exposes cascading selectors for engine, edition, licensing, deployment,
+  storage mode, and AWS operation; ElastiCache exposes its engine selector.
+  Those dimensions stay fixed for equivalent peers. Set the service-specific
+  `*_CATALOG_SOURCE` variable to an explicit local CSV path for deterministic
+  local builds; production never silently falls back to fixture data.
 
 ## Principles
 
@@ -100,6 +102,19 @@ AWS-backed loaders require network access and an AWS credential chain that can
 read the Pricing, EC2, and SSM APIs. Observable may reuse cached loader output
 from `src/.observablehq/cache`; run `npm run clean` before a build when you need
 to prove that data can be regenerated from its source.
+
+## Deployment
+
+The npm commands are local development and validation commands. A push to the
+GitHub `main` branch triggers the connected Cloudflare Pages project, which
+runs the static build and publishes the result at
+[aws.frankcontrepois.com](https://aws.frankcontrepois.com). There is no manual
+Observable Cloud deployment step.
+
+For a release, push the validated commit, monitor its `Cloudflare Pages` check,
+and inspect a changed canonical URL after promotion. Check the page title or
+expected content as well as the status code because the host can return the
+site fallback with HTTP 200 before a new parameterized route is live.
 
 ## Extending the site
 
