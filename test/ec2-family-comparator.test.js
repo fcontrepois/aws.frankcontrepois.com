@@ -58,6 +58,17 @@ test("new lineages and sizes are distinct", () => {
   assert.deepEqual(news.newSizes.map((d) => d.instance_type), ["m7i.xlarge"]);
 });
 
+test("a first-of-month EC2 snapshot reports discoveries in the previous month", () => {
+  const rows = [row("m8i.large", 8, "intel", "standard", 0.11, {
+    as_of_month: "2026-09",
+    first_observed_month: "2026-09"
+  })];
+  const news = newThisMonth(rows, {observationLagMonths: 1});
+  assert.equal(news.month, "2026-09");
+  assert.equal(news.appearanceMonth, "2026-08");
+  assert.equal(news.appearanceMonthLabel, "August 2026");
+});
+
 test("new lineage grouping preserves service pricing context", () => {
   const rows = [
     row("db.m7g.large", 7, "graviton", "standard", 0.10, {database_engine: "PostgreSQL", first_observed_month: "2026-08"}),

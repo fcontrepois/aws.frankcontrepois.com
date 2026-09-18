@@ -65,8 +65,8 @@ const defaults = defaultSelection(familyRows);
 const snapshot = latestMonth(familyRows);
 const familyNews = newThisMonth(familyRows, comparisonPolicy);
 const familyNewsBanner = familyNews.newLineages.length
-  ? html`<div class="tip"><strong>First observed this month:</strong> ${familyNews.newLineages.map((d) => `${family}${d.generation} ${d.processor} / ${d.variant_label} (${d.size_count} ${d.size_count === 1 ? "size" : "sizes"})`).join("; ")}.</div>`
-  : html`<div class="note">No new ${family.toUpperCase()} lineages were first observed in ${snapshot}.</div>`;
+  ? html`<div class="tip"><strong>New in ${familyNews.appearanceMonthLabel}:</strong> ${familyNews.newLineages.map((d) => `${family}${d.generation} ${d.processor} / ${d.variant_label} (${d.size_count} ${d.size_count === 1 ? "size" : "sizes"})`).join("; ")}.</div>`
+  : html`<div class="note">No new ${family.toUpperCase()} lineages were observed for ${familyNews.appearanceMonthLabel}.</div>`;
 ```
 
 # @@SERVICE_SHORT_NAME@@ ${family.toUpperCase()} family price comparator

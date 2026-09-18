@@ -4,6 +4,19 @@ function monthKey(value) {
   return value instanceof Date ? value.toISOString().slice(0, 7) : String(value ?? "").slice(0, 7);
 }
 
+function shiftedMonth(value, offset) {
+  const [year, month] = monthKey(value).split("-").map(Number);
+  if (!year || !month) return "";
+  return new Date(Date.UTC(year, month - 1 + offset, 1)).toISOString().slice(0, 7);
+}
+
+function monthLabel(value) {
+  const [year, month] = monthKey(value).split("-").map(Number);
+  if (!year || !month) return "Unavailable";
+  return new Intl.DateTimeFormat("en", {month: "long", year: "numeric", timeZone: "UTC"})
+    .format(new Date(Date.UTC(year, month - 1, 1)));
+}
+
 export function normalizeCatalog(rows) {
   return rows.map((d) => ({
     ...d,
@@ -68,8 +81,9 @@ export function latestMonth(rows) {
   return rows.reduce((latest, d) => monthKey(d.as_of_month) > latest ? monthKey(d.as_of_month) : latest, "");
 }
 
-export function newThisMonth(rows, {fixedDimensions = []} = {}) {
+export function newThisMonth(rows, {fixedDimensions = [], observationLagMonths = 0} = {}) {
   const month = latestMonth(rows);
+  const appearanceMonth = shiftedMonth(month, -observationLagMonths);
   const seenBefore = new Set(rows.filter((d) => monthKey(d.first_observed_month) < month).map((d) => lineageKey(d, fixedDimensions)));
   const newlyObserved = rows.filter((d) => monthKey(d.first_observed_month) === month);
   const grouped = new Map();
@@ -94,7 +108,14 @@ export function newThisMonth(rows, {fixedDimensions = []} = {}) {
     if (seenBefore.has(lineageKey(values[0], fixedDimensions))) newSizes.push(...values);
     else newLineages.push(summary);
   }
-  return {month, newLineages, newSizes};
+  return {
+    month,
+    monthLabel: monthLabel(month),
+    appearanceMonth,
+    appearanceMonthLabel: monthLabel(appearanceMonth),
+    newLineages,
+    newSizes
+  };
 }
 
 export function defaultSelection(rows) {

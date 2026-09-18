@@ -8,7 +8,9 @@ test("service index renderer produces resolved Observable Markdown", async () =>
   const page = await renderServiceIndex(instanceComparisonService("ec2"));
   assert.match(page, /^---\ntitle: EC2 family comparator/m);
   assert.match(page, /FileAttachment\("\.\.\/\.\.\/data\/ec2-family-catalog\.csv"\)/);
-  assert.match(page, /comparisonPolicy = \{"fixedDimensions":\[\]\}/);
+  assert.match(page, /comparisonPolicy = \{"fixedDimensions":\[\],"observationLagMonths":1\}/);
+  assert.match(page, /## New in \$\{news\.appearanceMonthLabel\}/);
+  assert.match(page, /snapshot was taken at the start of the month/);
   assert.doesNotMatch(page, /@@[A-Z0-9_]+@@/);
 });
 

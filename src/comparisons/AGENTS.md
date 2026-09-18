@@ -39,6 +39,12 @@ duplicate keys or available rows missing a current price. The dated September
 and undated latest CSV and Parquet objects were byte-identical. Treat these as
 time-stamped release checks, not permanent expected row counts.
 
+EC2 snapshots are taken on the first of the month. Keep their stored
+`first_observed_month` as snapshot provenance, but attribute reader-facing new
+instance discoveries to the preceding calendar month. For example, an instance
+first present in the `2026-09` snapshot is shown as new in August 2026. This is
+an inferred appearance period, not an official AWS launch date.
+
 ## Adding a comparison service
 
 Add one adapter under `lib/instance-comparisons/services/` and register it in

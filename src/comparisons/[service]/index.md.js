@@ -44,12 +44,15 @@ import {comparatorGroups, directGenerationPeers, formatDelta, newThisMonth, norm
 const comparisonPolicy = @@COMPARISON_POLICY@@;
 const catalog = normalizeCatalog(await FileAttachment(@@CATALOG_ATTACHMENT@@).csv({typed: true}));
 const news = newThisMonth(catalog, comparisonPolicy);
+const observationExplanation = news.appearanceMonth === news.month
+  ? html`“First observed” means the @@NOUN@@ first appeared in this project’s ${news.month} AWS price snapshot. It is not an official AWS launch date.`
+  : html`The ${news.month} snapshot was taken at the start of the month, so instances first seen there are attributed to ${news.appearanceMonthLabel}. This is an inferred appearance period, not an official AWS launch date.`;
 const families = [...new Set(catalog.map((d) => d.family))].sort();
 ```
 
-## First observed in ${news.month}
+## New in ${news.appearanceMonthLabel}
 
-“First observed” means the @@NOUN@@ first appeared in this project’s ${news.month} AWS price snapshot. It is not an official AWS launch date.
+${observationExplanation}
 
 ```js
 function lineageComparison(lineage) {
@@ -69,8 +72,8 @@ const newLineageCards = news.newLineages.length ? html`<div class="grid grid-col
   <p><strong>${d.variant_label}</strong> · ${d.size_count} new ${d.size_count === 1 ? "size" : "sizes"}</p>
   <p>${lineageComparison(d)}</p>
   <p>${familyLink(d.family, `Open ${d.family.toUpperCase()} family →`)}</p>
-</div>`)}</div>` : html`<div class="note">No new @@SERVICE_SHORT_NAME@@ lineages were first observed in this snapshot.</div>`;
-const emptyNewSizes = news.newSizes.length ? html`` : html`<div class="note">No new sizes in existing lineages were first observed this month.</div>`;
+</div>`)}</div>` : html`<div class="note">No new @@SERVICE_SHORT_NAME@@ lineages were observed for ${news.appearanceMonthLabel}.</div>`;
+const emptyNewSizes = news.newSizes.length ? html`` : html`<div class="note">No new sizes in existing lineages were observed for ${news.appearanceMonthLabel}.</div>`;
 const browseCards = html`<div class="grid grid-cols-4">${families.map((family) => html`<div class="card"><h2>${family.toUpperCase()}</h2><p>${catalog.filter((d) => d.family === family && d.status === "available").length} available @@NOUN@@ types</p><p>${familyLink(family, `Compare ${family.toUpperCase()} @@PLURAL_NOUN@@ →`)}</p></div>`)}</div>`;
 ```
 
