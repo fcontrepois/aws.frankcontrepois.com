@@ -40,7 +40,7 @@ theme: deep-space
 Pick an @@SERVICE_SHORT_NAME@@ @@FAMILY_LABEL@@, anchor the comparison on an exact @@NOUN@@ type, and see whether equivalent generations and CPU platforms are cheaper or costlier. Pricing uses @@PRICE_SCOPE@@ for **us-east-1**.
 
 ```js
-import {comparatorGroups, directGenerationPeers, formatDelta, newThisMonth, normalizeCatalog} from "../../components/instance-family-comparator.js";
+import {comparatorGroups, directGenerationPeers, formatDelta, newThisMonth, normalizeCatalog, relativeTo} from "../../components/instance-family-comparator.js";
 const comparisonPolicy = @@COMPARISON_POLICY@@;
 const catalog = normalizeCatalog(await FileAttachment(@@CATALOG_ATTACHMENT@@).csv({typed: true}));
 const news = newThisMonth(catalog, comparisonPolicy);
@@ -59,8 +59,7 @@ function lineageComparison(lineage) {
   const anchor = lineage.representative;
   const {generations} = comparatorGroups(anchor, catalog, comparisonPolicy);
   const {older} = directGenerationPeers(anchor, generations);
-  return older ? `${anchor.instance_type} is ${formatDelta(relativeToAnchor(older))} vs ${older.instance_type}` : "No equivalent predecessor observed";
-  function relativeToAnchor(peer) { return peer.relative_difference; }
+  return older ? `${anchor.instance_type} is ${formatDelta(relativeTo(older, anchor)?.relative_difference)} vs ${older.instance_type}` : "No equivalent predecessor observed";
 }
 function familyLink(family, label) {
   const link = html`<a>${label}</a>`;

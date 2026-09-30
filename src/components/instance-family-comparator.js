@@ -27,7 +27,7 @@ export function normalizeCatalog(rows) {
 }
 
 export function available(rows) {
-  return rows.filter((d) => d.status === "available" && Number.isFinite(+d.price_usd_per_hour));
+  return rows.filter((d) => d.status === "available" && d.price_usd_per_hour != null && String(d.price_usd_per_hour).trim() !== "" && Number.isFinite(+d.price_usd_per_hour));
 }
 
 export function lineageKey(d, dimensions = []) {
@@ -48,12 +48,17 @@ export function relativeTo(anchor, candidate) {
   };
 }
 
-export function comparatorGroups(anchor, rows, {fixedDimensions = []} = {}) {
-  if (!anchor) return {generations: [], cpus: [], variants: []};
+export function familyMatrix(anchor, rows, {fixedDimensions = []} = {}) {
+  if (!anchor) return [];
   const same = (candidate, dimensions) => dimensions.every((dimension) => candidate[dimension] === anchor[dimension]);
-  const peers = available(rows).filter((d) =>
+  return rows.filter((d) =>
     same(d, ["family", "size", "region_code", ...fixedDimensions])
   );
+}
+
+export function comparatorGroups(anchor, rows, policy = {}) {
+  if (!anchor) return {generations: [], cpus: [], variants: []};
+  const peers = available(familyMatrix(anchor, rows, policy));
   const generations = peers.filter((d) =>
     d.processor === anchor.processor && d.variant === anchor.variant && d.generation !== anchor.generation
   );

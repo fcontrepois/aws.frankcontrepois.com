@@ -60,3 +60,29 @@ test("OpenSearch uses the shared exact-instance comparison policy", async () => 
 test("unknown comparison services fail clearly", () => {
   assert.throws(() => instanceComparisonService("unknown"), /Unknown instance comparison service/);
 });
+
+test("new-lineage summary describes the new price relative to its predecessor", async () => {
+  const {comparatorGroups, directGenerationPeers, formatDelta, relativeTo} = await import("../src/components/instance-family-comparator.js");
+  const page = await renderServiceIndex(instanceComparisonService("elasticache"));
+  const functionSource = page.slice(page.indexOf("function lineageComparison("), page.indexOf("function familyLink("));
+  const base = {family: "m", processor: "graviton", variant: "standard", size: "large", region_code: "us-east-1", cache_engine: "Valkey", status: "available"};
+  const older = {...base, instance_type: "cache.m6g.large", generation: 6, price_usd_per_hour: 0.10};
+  const anchor = {...base, instance_type: "cache.m7g.large", generation: 7, price_usd_per_hour: 0.08};
+  const describe = new Function("catalog", "comparisonPolicy", "comparatorGroups", "directGenerationPeers", "formatDelta", "relativeTo", `${functionSource}; return lineageComparison;`)([older, anchor], {fixedDimensions: ["cache_engine"]}, comparatorGroups, directGenerationPeers, formatDelta, relativeTo);
+  assert.equal(describe({representative: anchor}), "cache.m7g.large is -20.0% vs cache.m6g.large");
+});
+
+test("managed-service matrices retain missing rows in the selected pricing context", async () => {
+  const {familyMatrix, comparatorGroups, available} = await import("../src/components/instance-family-comparator.js");
+  for (const id of ["elasticache", "opensearch"]) {
+    const service = instanceComparisonService(id);
+    const anchor = {family: "m", generation: 7, processor: "graviton", variant: "standard", size: "large", region_code: "us-east-1", cache_engine: "Valkey", instance_type: "m7g.large", status: "available", price_usd_per_hour: 0.1};
+    const missing = {...anchor, generation: 6, instance_type: "m6g.large", status: "missing", price_usd_per_hour: null, last_price_usd_per_hour: 0.12};
+    const rows = [anchor, missing, {...missing, size: "xlarge"}, {...missing, region_code: "eu-west-1"}];
+    if (id === "elasticache") rows.push({...missing, cache_engine: "Redis"});
+    assert.deepEqual(familyMatrix(anchor, rows, service.comparisonPolicy), [anchor, missing]);
+    assert.deepEqual(comparatorGroups(anchor, rows, service.comparisonPolicy).generations, []);
+    assert.match(await renderFamilyPage(service, "m"), /Inputs.table\(familyMatrix\(anchor, familyRows, comparisonPolicy\)/);
+    assert.deepEqual(available([{...anchor, price_usd_per_hour: null}, {...anchor, price_usd_per_hour: ""}]), []);
+  }
+});

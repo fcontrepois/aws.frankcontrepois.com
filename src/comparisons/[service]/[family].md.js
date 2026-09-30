@@ -52,7 +52,7 @@ theme: deep-space
 ---
 
 ```js
-import {available, comparatorGroups, defaultSelection, directGenerationPeers, formatDelta, latestMonth, newThisMonth, normalizeCatalog, relativeTo, MONTHLY_HOURS} from "../../components/instance-family-comparator.js";
+import {available, comparatorGroups, defaultSelection, directGenerationPeers, familyMatrix, formatDelta, latestMonth, newThisMonth, normalizeCatalog, relativeTo, MONTHLY_HOURS} from "../../components/instance-family-comparator.js";
 const family = @@FAMILY@@;
 const comparisonPolicy = @@COMPARISON_POLICY@@;
 const contextDimensions = @@CONTEXT_DIMENSIONS@@;
@@ -155,6 +155,9 @@ const comparisonSentence = (label, peer) => {
 const directSpecs = [anchor, older, newer, cheapestCpu].filter(Boolean).filter((d, i, values) => values.findIndex((x) => x.instance_type === d.instance_type) === i);
 const contextFields = contextDimensions.map(({field}) => field);
 const contextHeaders = Object.fromEntries(contextDimensions.map(({field, label}) => [field, label]));
+```
+
+```js
 Inputs.table(directSpecs, {
   columns: ["instance_type", ...contextFields, "processor", "variant_label", "vcpu", "memory_gib", "physical_processor", "processor_architecture", "network_performance", "storage", "price_usd_per_hour"],
   header: {instance_type: "@@NOUN_TITLE@@", ...contextHeaders, processor: "CPU", variant_label: "Variant", vcpu: "vCPU", memory_gib: "GiB", physical_processor: "Physical processor", processor_architecture: "Architecture", network_performance: "Network", storage: "Storage", price_usd_per_hour: "USD/hour"},
@@ -189,7 +192,7 @@ const chartDomain = [chartMinimum - chartSpan * 0.18, chartMaximum + chartSpan *
 resize((width) => Plot.plot({
   width,
   height: Math.max(260, chartData.length * 34 + 75),
-  marginLeft: width < 500 ? 125 : 155,
+  marginLeft: Math.min(width * 0.65, Math.max(125, ...chartData.map((d) => d.row_label.length * 6 + 20))),
   marginRight: 18,
   x: {domain: chartDomain, label: `Difference from ${anchor.instance_type} (%)`, grid: true, tickFormat: (d) => `${d > 0 ? "+" : ""}${d}%`},
   y: {domain: chartData.map((d) => d.row_label), label: null},
@@ -262,7 +265,7 @@ Inputs.table(capabilityRows, {
 ## Complete ${family.toUpperCase()} matrix for size ${size}
 
 ```js
-Inputs.table(anchorRows.filter((d) => d.size === size), {columns: ["instance_type", "status", "processor", "variant_label", "vcpu", "memory_gib", "price_usd_per_hour", "last_price_usd_per_hour", "first_observed_month"], header: {instance_type: "Instance", status: "Status", processor: "CPU", variant_label: "Variant", vcpu: "vCPU", memory_gib: "GiB", price_usd_per_hour: "Current USD/hour", last_price_usd_per_hour: "Last USD/hour", first_observed_month: "First observed"}, format: {price_usd_per_hour: (d) => money(d), last_price_usd_per_hour: (d) => money(d)}})
+Inputs.table(familyMatrix(anchor, familyRows, comparisonPolicy), {columns: ["instance_type", "status", "processor", "variant_label", "vcpu", "memory_gib", "price_usd_per_hour", "last_price_usd_per_hour", "first_observed_month"], header: {instance_type: "Instance", status: "Status", processor: "CPU", variant_label: "Variant", vcpu: "vCPU", memory_gib: "GiB", price_usd_per_hour: "Current USD/hour", last_price_usd_per_hour: "Last USD/hour", first_observed_month: "First observed"}, format: {price_usd_per_hour: (d) => money(d), last_price_usd_per_hour: (d) => money(d)}})
 ```
 
 <div class="note">@@COMPARISON_NOTE@@</div>
