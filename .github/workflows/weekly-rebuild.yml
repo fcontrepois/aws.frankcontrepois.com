@@ -1,0 +1,52 @@
+name: Weekly website rebuild
+on:
+  schedule:
+    - cron: '23 7 * * 1'
+  workflow_dispatch:
+permissions:
+  contents: write
+  checks: read
+concurrency:
+  group: weekly-website-rebuild
+  cancel-in-progress: false
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Trigger the existing Cloudflare Git integration
+        id: refresh
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          date -u '+%Y-%m-%dT%H:%M:%SZ' > build-refresh.txt
+          git add build-refresh.txt
+          git commit -m 'Refresh weekly website data'
+          git pull --rebase origin main
+          git push origin HEAD:main
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Wait for this commit's Cloudflare Pages build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          REFRESH_SHA: ${{ steps.refresh.outputs.sha }}
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 45); do
+            checks=$(gh api "repos/$REPOSITORY/commits/$REFRESH_SHA/check-runs")
+            conclusion=$(jq -r '[.check_runs[] | select(.name == "Cloudflare Pages")] | sort_by(.started_at) | last | .conclusion // "pending"' <<< "$checks")
+            case "$conclusion" in
+              success) exit 0 ;;
+              pending) echo "Waiting for Cloudflare Pages ($attempt/45)" ;;
+              *) echo "Cloudflare Pages failed: $conclusion" >&2; exit 1 ;;
+            esac
+            sleep 60
+          done
+          echo 'Cloudflare Pages did not report success within 45 minutes.' >&2
+          exit 1
+      - name: Verify published catalogue contents
+        run: python3 scripts/verify-deployment.py

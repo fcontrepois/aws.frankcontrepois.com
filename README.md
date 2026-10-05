@@ -99,9 +99,9 @@ npm run build
 ```
 
 AWS-backed loaders require network access and an AWS credential chain that can
-read the Pricing, EC2, and SSM APIs. Observable may reuse cached loader output
-from `src/.observablehq/cache`; run `npm run clean` before a build when you need
-to prove that data can be regenerated from its source.
+read the Pricing, EC2, and SSM APIs. `npm run build` always clears
+`src/.observablehq/cache` through its `prebuild` lifecycle script, so each
+production rebuild fetches fresh data. Development previews can reuse the cache.
 
 ## Deployment
 
@@ -115,6 +115,35 @@ For a release, push the validated commit, monitor its `Cloudflare Pages` check,
 and inspect a changed canonical URL after promotion. Check the page title or
 expected content as well as the status code because the host can return the
 site fallback with HTTP 200 before a new parameterized route is live.
+
+## Weekly refresh
+
+`.github/workflows/weekly-rebuild.yml` runs every Monday at 07:23 UTC
+(08:23 British Summer Time / 07:23 UK winter time), and supports manual runs
+from GitHub Actions. Scheduled runs may start later when GitHub is busy.
+It commits a UTC timestamp to `build-refresh.txt` on `main`; the existing
+Cloudflare Pages Git integration then rebuilds the entire site. No additional
+AWS jobs, deploy hooks, Cloudflare credentials, or SNS are needed.
+
+The workflow waits up to 45 minutes for the `Cloudflare Pages` check on that
+exact commit, then verifies all four canonical comparator CSVs against their
+dated and latest S3 catalogues. The checker rejects stale/mixed months,
+duplicate identities, different CSV contents, and HTTP-200 fallback pages.
+It expects the current UTC snapshot month, so a failed monthly AWS pipeline
+also fails the check. Failures appear in GitHub Actions and follow your GitHub
+notification preferences; the workflow does not send separate messages.
+
+For recovery, use **Actions → Weekly website rebuild → Run workflow**. To
+verify an explicit month without rebuilding:
+
+```sh
+SNAPSHOT_MONTH=2026-10 python3 scripts/verify-deployment.py
+```
+
+The source pipeline remains independent: new S3 data appears on the website
+at the next weekly refresh or an intervening push to `main`. This may take up
+to a week. The GitHub workflow requires `contents: write` to update the marker
+and `checks: read` to confirm Cloudflare's deployment.
 
 ## Extending the site
 

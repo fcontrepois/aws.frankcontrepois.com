@@ -44,8 +44,8 @@ npm run build
 npm run clean
 ```
 
-Run `npm run build` after content, loader, or configuration changes. A normal
-build may reuse `src/.observablehq/cache`. When loader behavior or source access
+Run `npm run build` after content, loader, or configuration changes. The `prebuild` lifecycle clears
+`src/.observablehq/cache` before every build. When loader behavior or source access
 changes, use `npm run clean && npm run build` and expect AWS-backed loaders to
 require network access and valid AWS credentials.
 
@@ -59,6 +59,11 @@ the commit and verify a changed route on the canonical domain. The check can
 lag briefly behind the live promotion, so validate the response content rather
 than treating an HTTP 200 alone as proof: Cloudflare may serve the site's
 fallback page for a route that has not been deployed yet.
+
+The weekly GitHub Actions workflow pushes `build-refresh.txt` every Monday at
+07:23 UTC to trigger the same Cloudflare Git integration, waits for its commit
+check, and validates all four live catalogue assets. It also supports manual
+runs. There are no AWS refresh jobs, deploy hooks, or SNS notifications.
 
 ## Data conventions
 
