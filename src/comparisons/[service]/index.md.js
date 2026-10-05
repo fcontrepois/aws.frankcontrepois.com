@@ -68,27 +68,17 @@ function familyLink(family, label) {
   link.setAttribute("href", `./${family}`);
   return link;
 }
-function configurationDetails(configuration) {
-  const row = configuration.representative;
-  return contextDimensions.map(({field, label}) => `${label}: ${row[field] || "Unspecified"}`).join(" · ");
-}
-function newsCards(lineages) {
-  return html`<div class="grid grid-cols-3">${lineages.map((d) => html`<div class="card">
-    <h2>${d.family.toUpperCase()}${d.generation} · ${d.processor}</h2>
-    <p><strong>${d.variant_label}</strong> · ${d.size_count} ${d.size_count === 1 ? "size" : "sizes"} across newly observed configurations</p>
-    ${contextDimensions.length ? html`<ul>${d.configurations.map((c) => html`<li><strong>${configurationDetails(c)}</strong><br>${c.size_count} ${c.size_count === 1 ? "size" : "sizes"} · ${lineageComparison(c)}</li>`)}</ul>` : html`<p>${lineageComparison(d)}</p>`}
-    <p>${familyLink(d.family, `Open ${d.family.toUpperCase()} family →`)}</p>
-  </div>`)}</div>`;
-}
-const newLineageCards = news.newLineages.length ? newsCards(news.newLineages) : html`<div class="note">No new @@SERVICE_SHORT_NAME@@ hardware lineages were observed for ${news.appearanceMonthLabel}.</div>`;
-const newConfigurationCards = news.newConfigurations.length ? html`<section><h2>New configurations on existing hardware</h2><p>These hardware lineages were already present in earlier snapshots. The configurations below were first observed in the ${news.month} snapshot, attributed to ${news.appearanceMonthLabel}.</p>${newsCards(news.newConfigurations)}</section>` : html``;
+const newLineageCards = news.lineages.length ? html`<div class="grid grid-cols-3">${news.lineages.map((d) => html`<div class="card">
+  <h2>${d.family.toUpperCase()}${d.generation} · ${d.processor}</h2>
+  <p><strong>${d.variant_label}</strong> · ${d.size_count} new ${d.size_count === 1 ? "size" : "sizes"}</p>
+  <p>${lineageComparison(d)}</p>
+  <p>${familyLink(d.family, `Open ${d.family.toUpperCase()} family →`)}</p>
+</div>`)}</div>` : html`<div class="note">No new @@SERVICE_SHORT_NAME@@ lineages were observed for ${news.appearanceMonthLabel}.</div>`;
 const emptyNewSizes = news.newSizes.length ? html`` : html`<div class="note">No new sizes in existing lineages were observed for ${news.appearanceMonthLabel}.</div>`;
 const browseCards = html`<div class="grid grid-cols-4">${families.map((family) => html`<div class="card"><h2>${family.toUpperCase()}</h2><p>${catalog.filter((d) => d.family === family && d.status === "available").length} available @@NOUN@@ types</p><p>${familyLink(family, `Compare ${family.toUpperCase()} @@PLURAL_NOUN@@ →`)}</p></div>`)}</div>`;
 ```
 
 ${newLineageCards}
-
-${newConfigurationCards}
 
 ## New sizes in known lineages
 

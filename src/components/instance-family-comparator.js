@@ -139,6 +139,7 @@ export function hardwareNews(rows, policy = {}) {
   const hardware = [...grouped.values()];
   return {
     ...news,
+    lineages: hardware,
     newLineages: hardware.filter((d) => !existing.has(lineageKey(d))),
     newConfigurations: hardware.filter((d) => existing.has(lineageKey(d)))
   };

@@ -37,6 +37,10 @@ beside the page so an agent only loads it when relevant.
 
 ## Commands
 
+At the start of every session, run `git fetch` before beginning repository work
+so remote references are current. Fetching does not merge remote changes into
+the working tree; preserve any unrelated local changes.
+
 ```sh
 npm install
 npm run dev

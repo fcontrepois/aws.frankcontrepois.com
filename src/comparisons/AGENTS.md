@@ -46,11 +46,12 @@ instance discoveries to the preceding calendar month. For example, an instance
 first present in the `2026-09` snapshot is shown as new in August 2026. This is
 an inferred appearance period, not an official AWS launch date.
 
-Service-index news groups cards by hardware lineage (family, generation, CPU,
-and variant), listing each newly observed pricing configuration inside the
-card. Hardware seen in an earlier snapshot belongs under “New configurations
-on existing hardware”, not new hardware. Count distinct sizes across contexts;
-keep predecessor price comparisons within each exact pricing configuration.
+Service-index news keeps the original compact three-column cards, with one card
+per hardware lineage (family, generation, CPU, and variant). Do not expand cards
+into pricing-configuration lists or add a separate configuration-news section.
+Count distinct sizes across contexts and use one representative configuration
+for the predecessor comparison, keeping that comparison within its exact
+pricing context. The family page retains the full configuration controls.
 
 ## Adding a comparison service
 

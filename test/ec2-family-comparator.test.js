@@ -92,6 +92,8 @@ test("hardware news groups configurations, counts distinct sizes, and separates 
   assert.equal(news.newLineages[0].configurations.length, 2);
   assert.equal(news.newLineages[0].size_count, 2);
   assert.deepEqual(news.newLineages[0].configurations.map((d) => d.representative.database_engine), ["MySQL", "PostgreSQL"]);
+  assert.equal(news.lineages.length, 2);
+  assert.equal(new Set(news.lineages.map((d) => `${d.family}|${d.generation}|${d.processor}|${d.variant}`)).size, 2);
   assert.equal(news.newConfigurations.length, 1);
   assert.equal(news.newConfigurations[0].generation, 7);
   assert.equal(news.newConfigurations[0].configurations[0].representative.database_engine, "PostgreSQL");
