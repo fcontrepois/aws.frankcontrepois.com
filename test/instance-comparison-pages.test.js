@@ -86,3 +86,21 @@ test("managed-service matrices retain missing rows in the selected pricing conte
     assert.deepEqual(available([{...anchor, price_usd_per_hour: null}, {...anchor, price_usd_per_hour: ""}]), []);
   }
 });
+
+test("all first-of-month service snapshots attribute discoveries to the previous month", async () => {
+  const {newThisMonth} = await import("../src/components/instance-family-comparator.js");
+  for (const id of ["ec2", "rds", "elasticache", "opensearch"]) {
+    const service = instanceComparisonService(id);
+    for (const [snapshot, appearance] of [["2026-10", "2026-09"], ["2026-09", "2026-08"], ["2026-01", "2025-12"]]) {
+      const rows = [{as_of_month: snapshot, first_observed_month: snapshot, family: "m", generation: 8, processor: "graviton", variant: "standard", size: "large"}];
+      const news = newThisMonth(rows, service.comparisonPolicy);
+      assert.equal(news.month, snapshot, id);
+      assert.equal(news.appearanceMonth, appearance, id);
+      assert.equal(news.newLineages.length, 1, id);
+      assert.equal(rows[0].first_observed_month, snapshot, id);
+    }
+    const page = await renderServiceIndex(service);
+    assert.match(page, /"observationLagMonths":1/);
+    assert.match(await renderFamilyPage(service, "m"), /inferred appearance period, not an official AWS launch date/);
+  }
+});

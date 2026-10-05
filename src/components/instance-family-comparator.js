@@ -123,6 +123,27 @@ export function newThisMonth(rows, {fixedDimensions = [], observationLagMonths =
   };
 }
 
+// Keep pricing contexts separate for comparisons, but present hardware only once.
+export function hardwareNews(rows, policy = {}) {
+  const news = newThisMonth(rows, policy);
+  const existing = new Set(rows.filter((d) => monthKey(d.first_observed_month) < news.month).map((d) => lineageKey(d)));
+  const grouped = new Map();
+  for (const configuration of news.newLineages) {
+    const key = lineageKey(configuration);
+    if (!grouped.has(key)) grouped.set(key, {...configuration, configurations: [], sizes: []});
+    const hardware = grouped.get(key);
+    hardware.configurations.push(configuration);
+    hardware.sizes = [...new Set([...hardware.sizes, ...configuration.sizes])].sort();
+    hardware.size_count = hardware.sizes.length;
+  }
+  const hardware = [...grouped.values()];
+  return {
+    ...news,
+    newLineages: hardware.filter((d) => !existing.has(lineageKey(d))),
+    newConfigurations: hardware.filter((d) => existing.has(lineageKey(d)))
+  };
+}
+
 export function defaultSelection(rows) {
   const priced = available(rows);
   const generation = Math.max(...priced.map((d) => +d.generation));

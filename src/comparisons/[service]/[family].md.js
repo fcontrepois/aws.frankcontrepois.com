@@ -77,6 +77,8 @@ Anchor the analysis on one exact @@NOUN@@ type. Every percentage below compares 
 
 ${familyNewsBanner}
 
+The snapshot is taken at the start of the month. New discoveries are attributed to the preceding calendar month as an inferred appearance period, not an official AWS launch date. “First observed” retains the snapshot month.
+
 ## Choose the anchor
 
 @@CONTEXT_CONTROLS@@

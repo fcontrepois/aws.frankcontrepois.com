@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {comparatorGroups, directGenerationPeers, newThisMonth, relativeTo} from "../src/components/instance-family-comparator.js";
+import {comparatorGroups, directGenerationPeers, hardwareNews, newThisMonth, relativeTo} from "../src/components/instance-family-comparator.js";
 
 const row = (instance_type, generation, processor, variant, price, extra = {}) => ({
   instance_type, family: "m", generation, processor, variant, size: "large",
@@ -77,4 +77,24 @@ test("new lineage grouping preserves service pricing context", () => {
   const news = newThisMonth(rows, {fixedDimensions: ["database_engine"]});
   assert.equal(news.newLineages.length, 2);
   assert.deepEqual(news.newLineages.map((d) => d.size_count), [1, 1]);
+});
+
+
+test("hardware news groups configurations, counts distinct sizes, and separates existing hardware", () => {
+  const base = {as_of_month: "2026-10", first_observed_month: "2026-10", family: "m", generation: 8, processor: "amd", variant: "standard", size: "large", database_engine: "MySQL"};
+  const rows = [base, {...base, database_engine: "PostgreSQL"}, {...base, size: "xlarge"},
+    {...base, generation: 7, first_observed_month: "2026-08"},
+    {...base, generation: 7, database_engine: "PostgreSQL"},
+    {...base, generation: 7, size: "xlarge"}];
+  const news = hardwareNews(rows, {fixedDimensions: ["database_engine"], observationLagMonths: 1});
+  assert.equal(news.appearanceMonthLabel, "September 2026");
+  assert.equal(news.newLineages.length, 1);
+  assert.equal(news.newLineages[0].configurations.length, 2);
+  assert.equal(news.newLineages[0].size_count, 2);
+  assert.deepEqual(news.newLineages[0].configurations.map((d) => d.representative.database_engine), ["MySQL", "PostgreSQL"]);
+  assert.equal(news.newConfigurations.length, 1);
+  assert.equal(news.newConfigurations[0].generation, 7);
+  assert.equal(news.newConfigurations[0].configurations[0].representative.database_engine, "PostgreSQL");
+  assert.equal(news.newSizes.length, 1);
+  assert.equal(news.newSizes[0].size, "xlarge");
 });

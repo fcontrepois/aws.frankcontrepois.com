@@ -39,11 +39,18 @@ duplicate keys or available rows missing a current price. The dated September
 and undated latest CSV and Parquet objects were byte-identical. Treat these as
 time-stamped release checks, not permanent expected row counts.
 
-EC2 snapshots are taken on the first of the month. Keep their stored
+EC2, RDS, ElastiCache, and OpenSearch share snapshots taken on the first of the
+month. Set `observationLagMonths: 1` for all four services. Keep their stored
 `first_observed_month` as snapshot provenance, but attribute reader-facing new
 instance discoveries to the preceding calendar month. For example, an instance
 first present in the `2026-09` snapshot is shown as new in August 2026. This is
 an inferred appearance period, not an official AWS launch date.
+
+Service-index news groups cards by hardware lineage (family, generation, CPU,
+and variant), listing each newly observed pricing configuration inside the
+card. Hardware seen in an earlier snapshot belongs under “New configurations
+on existing hardware”, not new hardware. Count distinct sizes across contexts;
+keep predecessor price comparisons within each exact pricing configuration.
 
 ## Adding a comparison service
 
