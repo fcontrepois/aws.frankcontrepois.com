@@ -16,15 +16,22 @@ SERVICES = ('ec2', 'rds', 'elasticache', 'opensearch')
 
 
 def fetch(url):
-    with urlopen(Request(url, headers={'Cache-Control': 'no-cache'}), timeout=30) as response:
-        return response.read().decode('utf-8')
+    request = Request(url, headers={
+        'Cache-Control': 'no-cache',
+        'User-Agent': 'AWS-Pricing-Deployment-Verifier/1.0',
+    })
+    try:
+        with urlopen(request, timeout=30) as response:
+            return response.read().decode('utf-8')
+    except Exception as error:
+        raise RuntimeError(f'{url}: {error}') from error
 
 
-def validate_catalog(text, month):
+def validate_catalog(text, month, key_field='catalog_key'):
     rows = list(csv.DictReader(io.StringIO(text)))
     if not rows or {r.get('as_of_month') for r in rows} != {month}:
         raise ValueError(f'Catalogue is empty or not entirely from {month}')
-    keys = [r.get('catalog_key') for r in rows]
+    keys = [r.get(key_field) for r in rows]
     if not all(keys) or len(keys) != len(set(keys)):
         raise ValueError('Catalogue contains empty or duplicate keys')
     return rows
@@ -49,7 +56,7 @@ def source_catalogues(month):
         name = f'{service}-family-catalog.csv'
         dated = fetch(SOURCE + month + '/' + name)
         latest = fetch(SOURCE + name)
-        rows = validate_catalog(dated, month)
+        rows = validate_catalog(dated, month, 'instance_type' if service == 'ec2' else 'catalog_key')
         if dated != latest:
             raise ValueError(f'{service}: latest alias differs from dated {month} catalogue')
         expected[service] = (dated, rows[0]['family'])
@@ -61,7 +68,7 @@ def verify_site(month, expected):
         page = urljoin(SITE, f'comparisons/{service}/{family}')
         html = fetch(page)
         deployed = fetch(asset_url(html, page, service))
-        rows = validate_catalog(deployed, month)
+        rows = validate_catalog(deployed, month, 'instance_type' if service == 'ec2' else 'catalog_key')
         if deployed.strip() != source.strip():
             raise ValueError(f'{service}: served CSV differs from {month} source')
         print(f'{service}: verified {month}, {len(rows)} rows at {page}', flush=True)
@@ -71,10 +78,10 @@ def main():
     month = os.environ.get('SNAPSHOT_MONTH') or datetime.now(timezone.utc).strftime('%Y-%m')
     if not re.fullmatch(r'\d{4}-(0[1-9]|1[0-2])', month):
         raise ValueError('SNAPSHOT_MONTH must be YYYY-MM')
-    expected = source_catalogues(month)
     attempts = 3
     for attempt in range(attempts):
         try:
+            expected = source_catalogues(month)
             verify_site(month, expected)
             return
         except Exception as error:
