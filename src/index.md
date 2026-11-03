@@ -61,9 +61,9 @@ Follow a question. Play with the data. Find something worth checking in your own
 <section class="story" aria-labelledby="history-question">
 <span class="number" aria-hidden="true">03</span>
 <div>
-<h3 id="history-question">How did S3 get from $0.15 to $0.023?</h3>
-<p>Follow a curated timeline of S3 storage pricing announcements, from its 2006 launch through the 2016 reduction. Some announcements changed the base price; others changed the tiers.</p>
-<a href="./s3PriceHistory">Read the S3 price story →</a>
+<h3 id="history-question">Still waiting for the next S3 price cut?</h3>
+<p>S3 Standard’s first storage tier in US East (N. Virginia) has stayed at $0.023/GB-month since December 2016. Revisit the price cuts, the long pause, and why leaving data in Standard deserves a second look.</p>
+<a href="./s3PriceHistory">Explore the long wait for an S3 price cut →</a>
 </div>
 </section>
 
