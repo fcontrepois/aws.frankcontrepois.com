@@ -26,16 +26,16 @@ toc: false
 
 # Your AWS bill has a few plot twists.
 
-<p class="intro">A newer instance might cost less. A cheaper region might be missing a service you need. And your bill can rise even when AWS hasn't changed its price.</p>
+<p class="intro">A newer instance can cost more. A cheaper region might be missing a service you need. And your bill can rise even when AWS hasn't changed its price.</p>
 
 Follow a question. Play with the data. Find something worth checking in your own AWS setup.
 
 <section class="featured" aria-labelledby="start-here">
 <p class="eyebrow">Start here · Compare your options</p>
-<h2 id="start-here">Still paying for yesterday's instance?</h2>
-<p>Pick an instance you use, then compare its price with other generations, processors, and sizes. See which options deserve a closer look before you plan a change.</p>
-<p>Explore EC2, RDS, ElastiCache, and OpenSearch, with every price difference measured against your selected instance.</p>
-<a class="action" href="./comparisons/">Find an instance to compare →</a>
+<h2 id="start-here">Does newer mean better value?</h2>
+<p>The latest generation can come with a higher list price. How much more would you pay, and what would need to improve to make that premium worthwhile?</p>
+<p>Choose an EC2, RDS, ElastiCache, or OpenSearch instance and compare prices across generations, processors, and sizes. Every price difference starts from your selected instance; whether the performance justifies it is a question for your workload.</p>
+<a class="action" href="./comparisons/">Compare the generation premium →</a>
 </section>
 
 ## Three more questions worth asking
