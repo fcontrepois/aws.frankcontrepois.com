@@ -17,6 +17,8 @@ test("service index renderer produces resolved Observable Markdown", async () =>
 test("family renderer bakes route values into the shared page", async () => {
   const page = await renderFamilyPage(instanceComparisonService("ec2"), "M");
   assert.match(page, /const family = "m";/);
+  assert.match(page, /ec2-launch-dates\.csv/);
+  assert.match(page, /Current prices by generation launch date/);
   assert.match(page, /# EC2 \$\{family\.toUpperCase\(\)\} family price comparator/);
   assert.match(page, /comparatorGroups\(anchor, familyRows, comparisonPolicy\)/);
   assert.match(page, /const contextDimensions = \[\];/);
@@ -29,6 +31,7 @@ test("RDS renderer fixes every pricing context dimension", async () => {
   const service = instanceComparisonService("rds");
   const page = await renderFamilyPage(service, "M");
   assert.match(page, /FileAttachment\("\.\.\/\.\.\/data\/rds-family-catalog\.csv"\)/);
+  assert.doesNotMatch(page, /ec2-launch-dates/);
   assert.match(page, /const contextDimensions = \[\{"field":"database_engine","label":"Engine"\}/);
   assert.match(page, /"operation","label":"AWS pricing code"/);
   assert.match(page, /No exact \$\{label\.toLowerCase\(\)\} is available for this processor, variant, size, database configuration, and region/);

@@ -30,6 +30,7 @@ export async function renderFamilyPage(service, family) {
     CONTEXT_DIMENSIONS: JSON.stringify(service.contextDimensions),
     CONTEXT_DEFAULTS: JSON.stringify(service.contextDefaults),
     CONTEXT_CONTROLS: renderContextControls(service),
+    EC2_TIMELINE: service.id === "ec2" ? source.split("/* __EC2_TIMELINE__\n")[1].split("\n__END_EC2_TIMELINE__ */")[0] : "",
     EQUIVALENCE_SCOPE: service.equivalenceScope,
     CATALOG_ATTACHMENT: JSON.stringify(`../../data/${service.id}-family-catalog.csv`),
     FAMILY: JSON.stringify(String(family).toLowerCase())
@@ -150,6 +151,8 @@ const comparisonSentence = (label, peer) => {
   <div class="card"><h2>Direct successor</h2><span class="big">${newer ? formatDelta(newer.relative_difference) : "Unavailable"}</span><p>${comparisonSentence("Direct successor", newer)}</p></div>
   <div class="card"><h2>Cheapest CPU peer</h2><span class="big">${cheapestCpu ? formatDelta(cheapestCpu.relative_difference) : "Unavailable"}</span><p>${comparisonSentence("Cheapest CPU peer", cheapestCpu)}</p></div>
 </div>
+
+@@EC2_TIMELINE@@
 
 ## Direct specifications
 
@@ -272,3 +275,53 @@ Inputs.table(familyMatrix(anchor, familyRows, comparisonPolicy), {columns: ["ins
 
 <div class="note">@@COMPARISON_NOTE@@</div>
 __END_PAGE_TEMPLATE__ */
+
+/* __EC2_TIMELINE__
+## Current prices by generation launch date
+
+Does a newer generation cost more today? Each dot is a current list price from the **${snapshot}** snapshot, positioned by the hardware lineage’s release date. Processor, capability variant, exact size, and region stay fixed to ${anchor.instance_type}.
+
+These are **not launch prices or a historical price series**. A lineage’s release does not mean every size or region was available on that date. Price alone does not measure performance.
+
+```js
+import {generationLaunchTimeline} from "../../components/instance-family-comparator.js";
+const ec2LaunchDates = await FileAttachment("../../data/ec2-launch-dates.csv").csv({typed: true});
+const launchTimeline = generationLaunchTimeline(anchor, familyRows, ec2LaunchDates, comparisonPolicy);
+const datedLaunches = launchTimeline.filter((d) => d.launch_date !== null);
+const undatedLaunches = launchTimeline.filter((d) => d.launch_date === null);
+```
+
+```js
+datedLaunches.length ? resize((width) => Plot.plot({
+  width,
+  height: 320,
+  marginLeft: 72,
+  marginRight: 45,
+  marginTop: 35,
+  x: {type: "utc", label: "Hardware lineage release date", ticks: width < 500 ? 4 : 7},
+  y: {label: "Current list price (USD/hour)", zero: true, grid: true},
+  marks: [
+    Plot.ruleY([0]),
+    Plot.dot(datedLaunches, {
+      x: "launch_date", y: "price_usd_per_hour", r: 6,
+      fill: (d) => d.is_anchor ? "#e5a54b" : "#69c5d5",
+      tip: true,
+      title: (d) => `${d.instance_type}${d.is_anchor ? " (anchor)" : ""}\nLineage release: ${d.launch_date.toISOString().slice(0, 10)}\nCurrent price: ${money(d.price_usd_per_hour)}/hour\nSnapshot: ${snapshot}`
+    }),
+    Plot.text(datedLaunches, {x: "launch_date", y: "price_usd_per_hour", text: "instance_type", dy: -15, fontSize: width < 500 ? 9 : 12})
+  ]
+})) : html`<div class="note">No documented release dates are available for this exact comparison yet.</div>`
+```
+
+The amber dot marks your anchor. ${undatedLaunches.length ? `Not plotted because a documented release date is unavailable: ${undatedLaunches.map((d) => d.instance_type).join(", ")}.` : "All available generation peers have a documented release date."}
+
+```js
+Inputs.table(launchTimeline.map((d) => ({...d, release_label: d.launch_date ? d.launch_date.toISOString().slice(0, 10) : "Unavailable"})), {
+  columns: ["instance_type", "release_label", "price_usd_per_hour"],
+  header: {instance_type: "Exact instance", release_label: "Lineage release date", price_usd_per_hour: "Current USD/hour"},
+  format: {price_usd_per_hour: (d) => money(d)}
+})
+```
+
+Release dates: [AWS EC2 Instance Types Guide release history](https://docs.aws.amazon.com/ec2/latest/instancetypes/doc-history.html), checked 3 November 2026. Dates are curated separately from our monthly observations; an unknown release date stays unavailable. Current prices use the same AWS catalogue and pricing filters as the comparison above.
+__END_EC2_TIMELINE__ */

@@ -109,6 +109,10 @@ Keep absent peers explicit as unavailable. The capability change summary only
 reports changed vCPU, memory, network, and storage values. Its monthly column is
 a difference from the anchor, not total monthly cost.
 
+## EC2 generation launch timeline
+
+EC2 family pages also plot current snapshot prices against documented hardware-lineage release dates in `src/data/ec2-launch-dates.csv`. This is a cross-sectional comparison, not launch pricing or a historical price series. It preserves the exact anchor dimensions and uses the existing generation peers. Unknown release dates stay explicit in the table and are not plotted; never fall back to `first_observed_month`. The source is AWS’s Instance Types Guide release history, checked 2026-11-03; dates describe lineage releases, not every size or regional rollout. Extend this small metadata dataset from official release evidence as new lineages appear.
+
 ## Observable Framework preferences
 
 Use standard Observable Framework and Observable Plot only. Prefer:
