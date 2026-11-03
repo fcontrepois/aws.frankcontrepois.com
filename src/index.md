@@ -1,335 +1,72 @@
 ---
+title: Explore AWS pricing
 theme: deep-space
+toc: false
 ---
 
-# AWS pricing graphs
+<style>
+.discovery {max-width: 1000px;}
+.discovery .eyebrow {font-size: 0.8rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--theme-foreground-muted);}
+.discovery h1 {font-size: clamp(2.4rem, 5vw, 4rem); line-height: 1.08; max-width: 800px; margin: 1rem 0;}
+.discovery .intro {font-size: 1.2rem; max-width: 660px; color: var(--theme-foreground-muted);}
+.discovery .featured {margin: 2.5rem 0; padding: clamp(1.25rem, 4vw, 2.5rem); border: 1px solid var(--theme-foreground-faintest); border-left: 4px solid #69c5d5; border-radius: 0.5rem; background: var(--theme-background-alt);}
+.discovery .featured h2 {margin-top: 0.6rem; font-size: 1.8rem;}
+.discovery .action {display: inline-block; padding: 0.7rem 1rem; border-radius: 0.3rem; background: #a9e2ec; color: #10252d; font-weight: 650; text-decoration: none;}
+.discovery a:focus-visible {outline: 3px solid #69c5d5; outline-offset: 5px;}
+.discovery .story {display: grid; grid-template-columns: 3rem 1fr; gap: 1rem; padding: 1.5rem 0; border-top: 1px solid var(--theme-foreground-faintest);}
+.discovery .number {font-size: 1.5rem; color: var(--theme-foreground-muted); font-variant-numeric: tabular-nums;}
+.discovery .story h3 {margin: 0; font-size: 1.3rem;}
+.discovery .story p {max-width: 660px; margin: 0.6rem 0;}
+.discovery .closing {margin-top: 2rem; color: var(--theme-foreground-muted);}
+</style>
 
-This is the site where I take AWS pricing data and I create nice graphs from them.
-The project is built using [Observable Framework](https://observablehq.com/framework)
-Last update: 2025-12--3
+<div class="discovery">
 
-```js
-const s3FirstGbPerRegionData = FileAttachment("data/s3FirstGbPerRegion.csv").csv({typed: true});
-```
+<p class="eyebrow">AWS pricing, explored · By Frank Contrepois</p>
 
-```js
-const s3FirstGbPerRegionDataMedian = d3.median(s3FirstGbPerRegionData, d=>d.price);
-```
+# Your AWS bill has a few plot twists.
 
-# Regions and price
-## S3 Standard - First GB price
-The calculated median value is **$${s3FirstGbPerRegionDataMedian}/h**. You need to have a good reason to be above that value. For example, GovCloud is costlier but the added security credentials and legal requirements might make it the only possible option.
+<p class="intro">A newer instance can cost more. A cheaper region might be missing a service you need. And your bill can rise even when AWS hasn't changed its price.</p>
 
-A price below $${s3FirstGbPerRegionDataMedian}/h per hour is good and should be the first choice.
+Follow a question. Play with the data. Find something worth checking in your own AWS setup.
 
-<div class="card">
+<section class="featured" aria-labelledby="start-here">
+<p class="eyebrow">Start here · Compare your options</p>
+<h2 id="start-here">Does newer mean better value?</h2>
+<p>The latest generation can come with a higher list price. How much more would you pay, and what would need to improve to make that premium worthwhile?</p>
+<p>Choose an EC2, RDS, ElastiCache, or OpenSearch instance and compare prices across generations, processors, and sizes. Every price difference starts from your selected instance; whether the performance justifies it is a question for your workload.</p>
+<a class="action" href="./comparisons/">Compare the generation premium →</a>
+</section>
 
-```js
-Plot.plot({
-  marginBottom: 78,
-  x:{tickRotate: -45, label: null},
-  y:{label: "First Gb of S3 Storage per region ($/h). The lower the better."},
-  grid: true,
-  width: width,
-  color: {type: "diverging", pivot: s3FirstGbPerRegionDataMedian, scheme: "BuRd"},
-  marks:[
-    Plot.barY(
-      s3FirstGbPerRegionData, {
-        x: "regioncode",
-        y: "price",
-        fill: "price",
-        sort: {x: "y", order: "ascending"},
-    }),
-    Plot.tip(
-      s3FirstGbPerRegionData,
-      Plot.pointerX({
-        x: "regioncode",
-        y: "price",
-        title: (d) =>` Region: ${d["regioncode"]}\n Price: $${d.price}/h`
-      })
-    ),
-    //Plot.ruleY([s3FirstGbPerRegionDataMedian])
-  ]
-})
-```
+## Three more questions worth asking
+
+<section class="story" aria-labelledby="region-question">
+<span class="number" aria-hidden="true">01</span>
+<div>
+<h3 id="region-question">Same cloud. Different postcode. Different price?</h3>
+<p>A region is a pricing decision as well as a location. Compare S3 and EC2 prices across regions, then explore which services and instance families are available there.</p>
+<a href="./regions">Explore regions &amp; pricing →</a>
+</div>
+</section>
+
+<section class="story" aria-labelledby="currency-question">
+<span class="number" aria-hidden="true">02</span>
+<div>
+<h3 id="currency-question">What if AWS changes nothing, but your bill goes up?</h3>
+<p>Hold a monthly AWS invoice at $100. Change the currency and the dates. See how exchange rates alone can move the cost in your local currency.</p>
+<a href="./fx-exposure">Follow the currency effect →</a>
+</div>
+</section>
+
+<section class="story" aria-labelledby="history-question">
+<span class="number" aria-hidden="true">03</span>
+<div>
+<h3 id="history-question">Still waiting for the next S3 price cut?</h3>
+<p>S3 Standard’s first storage tier in US East (N. Virginia) has stayed at $0.023/GB-month since December 2016. Revisit the price cuts, the long pause, and why leaving data in Standard deserves a second look.</p>
+<a href="./s3PriceHistory">Explore the long wait for an S3 price cut →</a>
+</div>
+</section>
+
+<p class="closing">I’m Frank Contrepois. I turn AWS pricing data into graphs and comparisons to make the tradeoffs easier to see. These are starting points for investigation: list prices tell part of the story; your usage, discounts, and technical requirements tell the rest.</p>
 
 </div>
-
-<div class="grid grid-cols-2">
-<div class="card"><h2>Costiest regions for S3</h2>
-
-```js
-// https://observablehq.com/framework/inputs/table
-Inputs.table(s3FirstGbPerRegionData,{
-  columns: ["regioncode", "location", "price"],
-  header: {
-    "regioncode": "Region",
-    "location": "Location",
-    "price": "Price"
-  },
-  width: {
-      "Region Code": 120,
-      "Location": 180,
-      "PricePerUnit": 120
-  },
-  align: {
-      "Region Code": "left",
-      "Location": "left",
-      "PricePerUnit": "right"
-  },
-  sort: "price",
-  reverse: true,
-  rows: 5.5,
-  maxWidth: 640,
-  multiple: false,
-  layout: "fixed"
-})
-```
-
-</div>
-<div class="card"><h2>Cheapest regions for S3</h2>
-
-```js
-// https://observablehq.com/framework/inputs/table
-Inputs.table(s3FirstGbPerRegionData,{
-  columns: ["regioncode", "location", "price"],
-  header: {
-    "regioncode": "Region",
-    "location": "Location",
-    "price": "Price"
-  },
-  width: {
-      "Region Code": 120,
-      "Location": 180,
-      "PricePerUnit": 120
-  },
-  align: {
-      "Region Code": "left",
-      "Location": "left",
-      "PricePerUnit": "right"
-  },
-  sort: "price",
-  reverse: false,
-  rows: 5.5,
-  maxWidth: 640,
-  multiple: false,
-  layout: "fixed"
-})
-```
-
-</div>
-</div>
-
-# T3.micro - OD cost
-
-```js
-const t3microOdHourPerRegion = FileAttachment("data/t3microOdHourPerRegion.csv").csv({typed: true})
-```
-
-```js
-const t3microOdHourPerRegionMedian = d3.median(t3microOdHourPerRegion, d=>d.price);
-```
-
-The t3.micro instance type exists in all regions. We can use the cost of running a t3.micro between each regions. We can assume that any difference in cost comes from factor outside of running the server. Example of external factors are: the price of electricity, climate, local laws, security requirements.
-
-The median price of running a t3.micro is **$${t3microOdHourPerRegionMedian}/h**. Again, you need a good reason to select regions where the price is higher.
-
-<div class="tip">
-  <p>Note how in GovCloud running a t3 instance costs the same as in most other regions, as opposed to the inflated price for storage?  </p>
-</div>
-
-
-<div class="card">
-
-```js
-Plot.plot({
-  marginBottom: 68,
-  x:{tickRotate: -45, label: null},
-  y:{label: "On-demand price to run a t3.micro ($/h). The lower the better."},
-  grid: true,
-  width: width,
-  color: {type: "diverging", pivot: t3microOdHourPerRegionMedian, scheme: "BuRd"},
-  marks:[
-    Plot.barY(
-      t3microOdHourPerRegion, {
-        x: "regioncode",
-        y: "price",
-        fill: "price",
-        sort: {x: "y", order: "ascending"},
-    }),
-    Plot.tip(
-      t3microOdHourPerRegion,
-      Plot.pointerX({
-        x: "regioncode",
-        y: "price",
-        title: (d) =>` Region: ${d["location"]}\n Price: $${d.price}/h`
-      })
-    )
-  ]
-})
-```
-
-</div>
-
-## Number of services per region
-Each little square is a service. It makes it easy to compare, no?
-
-<div class="card">
-
-```js
-Plot.plot({
-  width,
-  x: {label: "Region", tickRotate: -45},
-  y: { label: "Service" },
-  marginBottom: 80,
-  marks: [
-    Plot.waffleY(
-     region_to_service,
-     {
-      x: "regioncode",
-      y: 1,
-      fill: "service",
-      sort: {x: "-y"},
-      tip: {format: {y: null}},
-     }),
-  ]
-})
-```
-
-</div>
-
-
-
-</div>
-
-## Instances and regions
-
-```js
-const regionInstanceData = FileAttachment("data/ec2_generation_to_regions.csv").csv({typed:true})
-```
-
-```js
-const instances = [...new Set(regionInstanceData.map(d => d.generation))].sort()
-const regions = [...new Set(regionInstanceData.map(d => d.region_code))].sort()
-const families = [...new Set(regionInstanceData.map(d => d.family))].sort()
-const groupedFamily = d3.sort(d3.groups(regionInstanceData, d => d.family))
-const familyColour = Plot.scale({color: {domain: families}})
-const regionColours = Plot.scale({color: {domain: regions}})
-```
-
-```js
-Plot.legend({color: familyColour})
-```
-
-<div class="card">
-
-```js
-htl.html`${
-groupedFamily.map(([groupFamily,groupData]) => 
-Plot.plot({
-  width,
-  padding: 0,
-  grid: true,
-  marginTop: 80,
-  marginLeft: 80,
-  x: {axis: "top", label: null, tickRotate: -45},
-  y: { label: null},
-  color: familyColour,
-  marks: [
-    Plot.cell(groupData, {
-      x: "region_code",
-      y: "generation",
-      fill: "family",
-      inset: 0.5,
-      tip: true,
-    }),
-  ]
-}))
-}`
-```
-</div>
-
-## Regions and instances
-
-<div class="tip">
-  <p>
-    Hover the graphs to see the tooltip with the details.
- </p>
-</div>
-
-```js
-const groupedRegions = d3.sort(d3.groups(regionInstanceData, d => d.region_code))
-```
-
-<div class="card">
-
-```js
-htl.html`${groupedRegions.map(([groupRegions, groupData]) => {
-  // https://observablehq.com/plot/marks/axis#axis-mark
-  // display(groupData);
-  return Plot.plot({
-    width,
-    padding: 0,
-    grid: true,
-    marginTop: 80,
-    marginLeft: 80,
-    x: { label: null },
-    y: { label: null },
-    color: familyColour,
-    marks: [
-      Plot.cell(groupData, {
-        x: "generation",
-        y: "region_code",
-        fill: "family",
-        inset: 0.5,
-        tip: true,
-      }),
-      Plot.axisX(groupData, {
-        x: (y) => y.family, tickFormat: y => y.family
-      })
-    ]
-  })
-})}`
-
-```
-
-</div>
-
-## Service to region mapping
-
-```js
-const region_to_service = FileAttachment("data/region_to_service.csv").csv({typed:true})
-```
-
-```js
-const serviceCount = [...new Set(region_to_service.map(d => d.service))].length
-const serviceRowHeight = 20; // px per service
-```
-
-<div class="card">
-
-```js
-Plot.plot({
-  width,
-  padding: 0,
-  grid: true,
-  marginTop: 80,
-  marginLeft: 120,
-  height: serviceCount * serviceRowHeight, 
-  x: {axis: "top", label: "Region", tickRotate: -45},
-  y: { label: "Service", transform: s => s.replace('AWS', '').replace('Amazon', '') },
-  marks: [
-    Plot.cell(region_to_service,{
-      x: "regioncode",
-      y: "service",
-      fill: "green",
-      inset: 0.5,
-      tip: true,
-    }),
-  ]
-})
-```
-
-</div>
-
-

@@ -9,7 +9,8 @@ export default {
   // all pages will be listed in alphabetical order. Listing pages explicitly
   // lets you organize them into sections and have unlisted pages.
   pages: [
-    {name: "AWS pricing graphs", path: "/"},
+    {name: "Explore AWS pricing", path: "/"},
+    {name: "Regions & pricing", path: "/regions"},
     {name: "Instance comparisons", pages: [
       {name: "Overview", path: "/comparisons/"},
       ...instanceComparisonServices.map((service) => ({name: service.shortName, path: `/comparisons/${service.id}/`}))

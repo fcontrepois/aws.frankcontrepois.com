@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {comparatorGroups, directGenerationPeers, hardwareNews, newThisMonth, relativeTo} from "../src/components/instance-family-comparator.js";
+import {generationLaunchTimeline, comparatorGroups, directGenerationPeers, hardwareNews, newThisMonth, relativeTo} from "../src/components/instance-family-comparator.js";
 
 const row = (instance_type, generation, processor, variant, price, extra = {}) => ({
   instance_type, family: "m", generation, processor, variant, size: "large",
@@ -99,4 +99,29 @@ test("hardware news groups configurations, counts distinct sizes, and separates 
   assert.equal(news.newConfigurations[0].configurations[0].representative.database_engine, "PostgreSQL");
   assert.equal(news.newSizes.length, 1);
   assert.equal(news.newSizes[0].size, "xlarge");
+});
+
+
+test("launch timeline keeps exact peers, current prices, and unknown release dates", () => {
+  const anchor = row("m6i.large", 6, "intel", "standard", 0.096);
+  const rows = [anchor, row("m5.large", 5, "intel", "standard", 0.096),
+    row("m7i.large", 7, "intel", "standard", 0.1008),
+    row("m7a.large", 7, "amd", "standard", 0.09),
+    row("m7in.large", 7, "intel", "n", 0.12),
+    row("m5.xlarge", 5, "intel", "standard", 0.192, {size: "xlarge"}),
+    row("m8i.large", 8, "intel", "standard", null, {status: "missing"})];
+  const launches = [{lineage: "m5", launch_date: "2017-11-28", source_url: "https://aws.amazon.com/"},
+    {lineage: "m6i", launch_date: new Date("2021-08-16T00:00:00Z"), source_url: "https://aws.amazon.com/"}];
+  const timeline = generationLaunchTimeline(anchor, rows, launches);
+  assert.deepEqual(timeline.map((d) => d.instance_type), ["m5.large", "m6i.large", "m7i.large"]);
+  assert.equal(timeline[0].launch_date.toISOString().slice(0, 10), "2017-11-28");
+  assert.equal(timeline[1].is_anchor, true);
+  assert.equal(timeline[1].price_index, 100);
+  assert.equal(timeline[2].price_index, 105);
+  const changedAnchor = generationLaunchTimeline(rows[2], rows, launches);
+  assert.equal(changedAnchor.find((d) => d.instance_type === "m7i.large").price_index, 100);
+  assert.ok(Math.abs(changedAnchor[0].price_index - 95.2380952381) < 0.000001);
+  assert.equal(timeline[2].launch_date, null);
+  assert.equal(timeline[2].price_usd_per_hour, 0.1008);
+  assert.notEqual(timeline[0].launch_date.toISOString().slice(0, 7), timeline[0].first_observed_month);
 });

@@ -10,7 +10,8 @@ pricing basket.
 
 ## Repository map
 
-- `src/index.md`: current regional price and availability dashboard.
+- `src/index.md`: discovery homepage linking to pricing tools and stories.
+- `src/regions.md`: current regional price and availability dashboard.
 - `src/fx-exposure.md`: ECB foreign-exchange exposure analysis.
 - `src/s3PriceHistory.md`: manually curated S3 history and commentary.
 - `src/data/*.csv.js`: Observable data loaders; their CSV standard output is
