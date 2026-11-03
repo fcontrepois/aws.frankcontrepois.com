@@ -116,6 +116,11 @@ test("launch timeline keeps exact peers, current prices, and unknown release dat
   assert.deepEqual(timeline.map((d) => d.instance_type), ["m5.large", "m6i.large", "m7i.large"]);
   assert.equal(timeline[0].launch_date.toISOString().slice(0, 10), "2017-11-28");
   assert.equal(timeline[1].is_anchor, true);
+  assert.equal(timeline[1].price_index, 100);
+  assert.equal(timeline[2].price_index, 105);
+  const changedAnchor = generationLaunchTimeline(rows[2], rows, launches);
+  assert.equal(changedAnchor.find((d) => d.instance_type === "m7i.large").price_index, 100);
+  assert.ok(Math.abs(changedAnchor[0].price_index - 95.2380952381) < 0.000001);
   assert.equal(timeline[2].launch_date, null);
   assert.equal(timeline[2].price_usd_per_hour, 0.1008);
   assert.notEqual(timeline[0].launch_date.toISOString().slice(0, 7), timeline[0].first_observed_month);

@@ -3,7 +3,7 @@ export const MONTHLY_HOURS = 730;
 // Release dates describe hardware lineages, not the availability of every size
 // or region. Never substitute snapshot first-observed dates for launch dates.
 export function generationLaunchTimeline(anchor, rows, launches, policy = {}) {
-  const peers = [anchor, ...comparatorGroups(anchor, rows, policy).generations];
+  const peers = [relativeTo(anchor, anchor), ...comparatorGroups(anchor, rows, policy).generations];
   const dates = new Map(launches.map((d) => [d.lineage, d]));
   return peers.map((d) => {
     const release = dates.get(d.instance_type.split(".")[0]);

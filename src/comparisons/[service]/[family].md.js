@@ -292,6 +292,16 @@ const undatedLaunches = launchTimeline.filter((d) => d.launch_date === null);
 ```
 
 ```js
+const launchPriceView = view(Inputs.radio(["Price index", "USD/hour"], {label: "Price view", value: "Price index"}));
+```
+
+Price index **100 = ${anchor.instance_type}**; 110 means 10% costlier and 90 means 10% cheaper. The baseline follows your selected anchor.
+
+```js
+const launchPriceField = launchPriceView === "Price index" ? "price_index" : "price_usd_per_hour";
+```
+
+```js
 datedLaunches.length ? resize((width) => Plot.plot({
   width,
   height: 320,
@@ -299,27 +309,27 @@ datedLaunches.length ? resize((width) => Plot.plot({
   marginRight: 45,
   marginTop: 35,
   x: {type: "utc", label: "Hardware lineage release date", ticks: width < 500 ? 4 : 7},
-  y: {label: "Current list price (USD/hour)", zero: true, grid: true},
+  y: {label: launchPriceView === "Price index" ? `Price index (${anchor.instance_type} = 100)` : "Current list price (USD/hour)", zero: true, grid: true},
   marks: [
-    Plot.ruleY([0]),
+    Plot.ruleY([launchPriceView === "Price index" ? 100 : anchor.price_usd_per_hour], {stroke: "#e5a54b", strokeDasharray: "4,4", strokeOpacity: 0.7}),
     Plot.dot(datedLaunches, {
-      x: "launch_date", y: "price_usd_per_hour", r: 6,
+      x: "launch_date", y: launchPriceField, r: 6,
       fill: (d) => d.is_anchor ? "#e5a54b" : "#69c5d5",
       tip: true,
-      title: (d) => `${d.instance_type}${d.is_anchor ? " (anchor)" : ""}\nLineage release: ${d.launch_date.toISOString().slice(0, 10)}\nCurrent price: ${money(d.price_usd_per_hour)}/hour\nSnapshot: ${snapshot}`
+      title: (d) => `${d.instance_type}${d.is_anchor ? " (anchor)" : ""}\nLineage release: ${d.launch_date.toISOString().slice(0, 10)}\nCurrent price: $${d.price_usd_per_hour}/hour\nIndex: ${d.price_index.toFixed(2)} (${formatDelta(d.relative_difference)} vs ${anchor.instance_type})\nSnapshot: ${snapshot}`
     }),
-    Plot.text(datedLaunches, {x: "launch_date", y: "price_usd_per_hour", text: "instance_type", dy: -15, fontSize: width < 500 ? 9 : 12})
+    Plot.text(datedLaunches, {x: "launch_date", y: launchPriceField, text: "instance_type", dy: -15, fontSize: width < 500 ? 9 : 12})
   ]
 })) : html`<div class="note">No documented release dates are available for this exact comparison yet.</div>`
 ```
 
-The amber dot marks your anchor. ${undatedLaunches.length ? `Not plotted because a documented release date is unavailable: ${undatedLaunches.map((d) => d.instance_type).join(", ")}.` : "All available generation peers have a documented release date."}
+The amber dot and dashed line mark your anchor. ${undatedLaunches.length ? `Not plotted because a documented release date is unavailable: ${undatedLaunches.map((d) => d.instance_type).join(", ")}.` : "All available generation peers have a documented release date."}
 
 ```js
 Inputs.table(launchTimeline.map((d) => ({...d, release_label: d.launch_date ? d.launch_date.toISOString().slice(0, 10) : "Unavailable"})), {
-  columns: ["instance_type", "release_label", "price_usd_per_hour"],
-  header: {instance_type: "Exact instance", release_label: "Lineage release date", price_usd_per_hour: "Current USD/hour"},
-  format: {price_usd_per_hour: (d) => money(d)}
+  columns: ["instance_type", "release_label", "price_usd_per_hour", "price_index"],
+  header: {instance_type: "Exact instance", release_label: "Lineage release date", price_usd_per_hour: "Current USD/hour", price_index: "Index (anchor = 100)"},
+  format: {price_usd_per_hour: (d) => money(d), price_index: (d) => d.toFixed(2)}
 })
 ```
 
