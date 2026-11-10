@@ -1,0 +1,25 @@
+/* Use the same system-sans fallback as frankcontrepois.com. */
+:root { --sans-serif: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+body { font-family: var(--sans-serif); }
+#observablehq-main h1 { font-family: Georgia, "Times New Roman", serif; font-weight:400; font-style:italic; font-size:clamp(2rem, 4.5vw, 3.5rem); line-height:1.12; letter-spacing:0; }
+#observablehq-main h2 { font-family:var(--sans-serif); font-weight:600; }
+#observablehq-main .discovery h1 { max-width:800px; margin:1rem 0 1.5rem; text-decoration:underline; text-decoration-color:#a82c35; text-decoration-thickness:3px; text-underline-offset:9px; }
+#observablehq-main .discovery p { font-size:18px; line-height:1.65; }
+#observablehq-main .discovery .intro { font-size:20px; line-height:1.6; color:var(--theme-foreground); }
+#observablehq-main .discovery .eyebrow { font-size:14px; letter-spacing:.03em; text-transform:none; }
+#observablehq-main .discovery .featured h2 { font-size:28px; line-height:1.25; }
+#observablehq-main table { font-variant-numeric:tabular-nums; }
+
+.aws-identity { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px 24px; padding:8px 0 18px; margin-bottom:24px; border-bottom:1px solid var(--theme-foreground-faintest); font-family:var(--sans-serif); }
+.aws-brand { display:flex; align-items:center; gap:12px; color:var(--theme-foreground); text-decoration:none; font-size:14px; line-height:1.45; }
+.aws-brand img { width:48px; height:48px; object-fit:contain; background:#faf9f6; border-radius:4px; }
+.aws-brand strong { display:block; }
+.aws-links { display:flex; flex-wrap:wrap; gap:8px 20px; }
+.aws-links a { display:inline-flex; align-items:center; min-height:44px; font-size:14px; text-underline-offset:4px; }
+.aws-identity a:focus-visible { outline:2px solid currentColor; outline-offset:4px; }
+.aws-footer { display:flex; flex-wrap:wrap; gap:8px 20px; align-items:baseline; }
+#observablehq-center > #observablehq-header { position:static; display:block; height:auto; margin:1rem auto; padding:0; border:0; }
+#observablehq-center > #observablehq-header ~ #observablehq-main { margin-top:1rem; }
+#observablehq-header .aws-identity { width:100%; box-sizing:border-box; margin-bottom:0; }
+#observablehq-header .aws-brand { color:var(--theme-foreground); }
+#observablehq-header .aws-links a { color:#eaa4ab; }

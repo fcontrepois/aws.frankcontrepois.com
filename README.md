@@ -12,6 +12,19 @@ The collection and historical transformation layer lives in the sibling
 converts them to Parquet, and produces curated historical datasets. This
 repository should consume only compact extracts suitable for a static website.
 
+## Role and identity
+
+This site is the relatively stable reference part of Frank’s FinOps work: it
+follows AWS prices, service options, availability, and documented changes.
+Keep its editorial focus on evidence, sources, dates, and precise comparison
+rules. Shared identity and links connect it to `frankcontrepois.com` and
+`coblan.it`; they do not turn the research pages into advisory copy.
+
+The shared header, footer, and favicon are configured in
+`observablehq.config.js`. `src/assets/identity.css` adds the identity styling
+while preserving the existing dark chart themes. Major titles use regular italic Georgia, following `frankcontrepois.com`.
+Body text and controls share a system sans-serif stack.
+
 ## What the site currently publishes
 
 | Page | Purpose | Data |

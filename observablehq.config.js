@@ -30,7 +30,8 @@ export default {
 
   // Content to add to the head of the page, e.g. for a favicon:
   head: `
-    <link rel="icon" href="observable.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="/assets/frank-glasses-logo.png" type="image/png">
+    <link rel="stylesheet" href="/assets/identity.css">
     <!-- Fathom - beautiful, simple website analytics -->
     <script src="https://cdn.usefathom.com/script.js" data-site="PEWAUCOW" defer></script>
     <!-- / Fathom -->
@@ -41,7 +42,11 @@ export default {
 
   // Some additional configuration options and their defaults:
   theme: ["near-midnight"],
-  header:` 
+  header:`
+  <div class="aws-identity">
+    <a class="aws-brand" href="https://frankcontrepois.com/"><img src="/assets/frank-glasses-logo.png" width="48" height="48" alt=""><span>AWS pricing research by<strong>Frank Contrepois</strong></span></a>
+    <nav class="aws-links" aria-label="Frank’s work"><a href="https://frankcontrepois.com/">Writing &amp; ideas</a><a href="https://coblan.it/">Work with Frank</a></nav>
+  </div>
   <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-6YD6LFWQFG"></script>
 <script>
@@ -52,7 +57,7 @@ export default {
   gtag('config', 'G-6YD6LFWQFG');
 </script>
   `,
-   footer: "Built by Frank Contrepois using Observable.", // what to show in the footer (HTML)
+   footer: '<div class="aws-footer"><span>AWS pricing research · Frank Contrepois</span><a href="https://frankcontrepois.com/">Context is everything</a><span>Built with Observable.</span></div>', // what to show in the footer (HTML)
   // sidebar: true, // whether to show the sidebar
    toc: true, // whether to show the table of contents
   // pager: true, // whether to show previous & next links in the footer
